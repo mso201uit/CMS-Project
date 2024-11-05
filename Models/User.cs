@@ -2,5 +2,20 @@
 {
     public class User
     {
+        public int Id { get; set; }
+        public string Unsername { get; set; }
+        public string Password { get; set; }
+        public string Email { get; set; }
+        
+        public DateTime CreatedDate { get; set; }
+        public ICollection<Document> Documents { get; set; }
+        public ICollection<Folder> Folders { get; set; }
+
+        public User()
+        {
+            Documents = new List<Document>();
+            Folders = new List<Folder>();
+            CreatedDate = DateTime.UtcNow;
+        }
     }
 }
