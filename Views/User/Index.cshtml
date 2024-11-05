@@ -1,20 +1,23 @@
-﻿@model IEnumerable<User>
+﻿@model IEnumerable<CMS_Project.Models.User>
 
 <h1>Users</h1>
 
 <table>
+    <thead>
     <tr>
-        <th>@Html.DisplayNameFor(model => model.Id)</th>
-        <th>@Html.DisplayNameFor(model => model.Username)</th>
-        <th>@Html.DisplayNameFor(model => model.Email)</th>
+        <th>Id</th>
+        <th>Username</th>
+        <th>Email</th>
     </tr>
-
+    </thead>
+    <tbody>
     @foreach (var user in Model)
     {
-        <tr>
-            <td>@user.Id</td>
-            <td>@user.Username</td>
-            <td>@user.Email</td>
-        </tr>
+    <tr>
+        <td>@user.Id</td>
+        <td>@user.Username</td>
+        <td>@user.Email</td>
+    </tr>
     }
+    </tbody>
 </table>

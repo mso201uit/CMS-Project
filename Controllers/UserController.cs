@@ -2,23 +2,13 @@
 using System.Linq;
 using CMS_Project.Data;
 
-namespace CMS_Project.Controllers;
-
-public class UserController : Controller
+namespace CMS_Project.Controllers
 {
-    private readonly CMSContext _context;
-
-    public UserController(CMSContext context)
+    public class UserController : Controller
     {
-        _context = context;
+        public IActionResult Index()
+        {
+            return View();
+        }
     }
-    
-    // GET /User/
-    public IActionResult Index()
-    {
-        var users = _context.Users.ToList();
-        return View(users);
-    }
-    // Leg til mer
-    
-}
+}   
