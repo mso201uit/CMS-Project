@@ -1,80 +1,92 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 using CMS_Project.Data;
 using CMS_Project.Models;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
+namespace CMS_Project.Controllers;
 
-namespace CMS_Project.Controllers
+public class AuthController : Controller
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class AuthController : ControllerBase
+    private readonly CMSContext _context;
+
+    public AuthController(CMSContext context)
     {
-        private readonly CMSContext _context;
-        private readonly IConfiguration _configuration;
-
-        public AuthController(CMSContext context, IConfiguration configuration)
+        _context = context;
+    }
+    
+    // GET /User/
+    public async Task<IActionResult> Index()
+    {
+        var users = await _context.Users.ToListAsync();
+        return View(users);
+    }
+    
+    // Add a new user
+    public IActionResult Create()
+    {
+        return View();
+    }
+    
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult Create(User user)
+    {
+        if (ModelState.IsValid)
         {
-            _context = context;
-            _configuration = configuration;
-        }
-
-        // POST: api/auth/register
-        [HttpPost("register")]
-        public IActionResult Register(User user)
-        {
-            if (_context.Users.Any(u => u.Username == user.Username))
-            {
-                return BadRequest("Username already exists.");
-            }
-
-            // Hash password before storing
-            user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
             _context.Users.Add(user);
             _context.SaveChanges();
+            return RedirectToAction(nameof(Index));
+        }
+
+        return View(user);
+    }
     
-            return Ok("User registered successfully.");
-        }
-        
-        // POST: api/auth/login
-        [HttpPost("login")]
-        public IActionResult Login([FromBody] User user)
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult Edit(int id, User user)
+    {
+        if (id != user.Id)
         {
-            var existingUser = _context.Users.FirstOrDefault(u => u.Username == user.Username);
-            if (existingUser == null || !BCrypt.Net.BCrypt.Verify(user.Password, existingUser.Password))
-            {
-                return Unauthorized("Invalid username or password.");
-            }
-
-            // Generate JWT Token
-            var token = GenerateJwtToken(existingUser);
-            return Ok(new { Token = token });
+            return NotFound();
         }
 
-        private string GenerateJwtToken(User user)
+        if (ModelState.IsValid)
         {
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
-            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-            var claims = new[]
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Username),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-            };
-
-            var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Audience"],
-                claims: claims,
-                expires: DateTime.Now.AddHours(1),
-                signingCredentials: credentials
-            );
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            _context.Update(user);
+            _context.SaveChanges();
+            return RedirectToAction(nameof(Index));
         }
+        return View(user);
+    }
 
+    public IActionResult Delete(User id)
+    {
+        var user = _context.Users.Find(id);
+        if (user == null)
+        {
+            return NotFound();
+        }
+        return View(user);
+    }
+    
+    [HttpPost, ActionName("Delete")]
+    [ValidateAntiForgeryToken]
+    public IActionResult DeleteConfirmed(int id)
+    {
+        var user = _context.Users.Find(id);
+        _context.Users.Remove(user);
+        _context.SaveChanges();
+        return RedirectToAction(nameof(Index));
+    }
+
+    public IActionResult Details(int id)
+    {
+        var user = _context.Users.Find(id);
+        if (user == null)
+        {
+            return NotFound();
+        }
+        return View(user);
     }
 }

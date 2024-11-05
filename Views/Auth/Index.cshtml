@@ -1,26 +1,15 @@
-﻿@model IEnumerable<CMS_Project.Models.User>
+﻿@model List<CMS_Project.Models.User>
 
-<h1>Users</h1>
-<p>
-    <a asp-action="Create">Add New User</a>
-</p>
+<h2>Logg inn</h2>
 
-<table>
-    <thead>
-    <tr>
-        <th>Id</th>
-        <th>Username</th>
-        <th>Email</th>
-    </tr>
-    </thead>
-    <tbody>
-    @foreach (var user in Model)
-    {
-    <tr>
-        <td>@user.Id</td>
-        <td>@user.Username</td>
-        <td>@user.Email</td>
-    </tr>
-    }
-    </tbody>
-</table>
+<form asp-action="Login" method="post" class="login-form">
+    <div>
+        <input asp-for="UsernameOrEmail" placeholder="Username or Email" class="form-control" />
+        <span asp-validation-for="UsernameOrEmail" class="text-danger"></span>
+    </div>
+    <div>
+        <input asp-for="Password" type="password" placeholder="Password" class="form-control" />
+        <span asp-validation-for="Password" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary">Logg inn</button>
+</form>
