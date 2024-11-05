@@ -5,13 +5,14 @@ var builder = WebApplication.CreateBuilder(args);
 
 
 // Add services to the container.
+
+// Register the database context
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<CMSContext>(options =>
     options.UseSqlServer(connectionString));
 
-
-// Add services to the container.
-builder.Services.AddControllers();
+// Register MVC services with support for views
+builder.Services.AddControllersWithViews();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
