@@ -13,7 +13,7 @@ public class Folder
     public User User { get; set; }
     
     public ICollection<Folder> subFolders { get; set; }
-    public ICollection<Document> documents { get; set; }
+    public ICollection<Document> Documents { get; set; }
 
     public Folder()
     {
