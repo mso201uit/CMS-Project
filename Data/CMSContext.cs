@@ -15,6 +15,11 @@ namespace CMS_Project.Data
         protected override async void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            //SEEDING
+
+            //Users
+
         }
     }
 }
