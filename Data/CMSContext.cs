@@ -19,7 +19,7 @@ namespace CMS_Project.Data
             //SEEDING
 
             //Users
-
+            modelBuilder.Entity<User>().HasData(new User { Id = 1, Username="Bjørn", Password="test123",   });
         }
     }
 }
