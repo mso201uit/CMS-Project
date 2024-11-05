@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CMS_Project.Migrations
 {
     [DbContext(typeof(CMSContext))]
-    [Migration("20241105203054_InitialCreate")]
+    [Migration("20241105210527_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -40,6 +40,23 @@ namespace CMS_Project.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("ContentTypes");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Type = "Text"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Type = "Url"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Type = "Picture"
+                        });
                 });
 
             modelBuilder.Entity("CMS_Project.Models.Document", b =>
@@ -79,6 +96,28 @@ namespace CMS_Project.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Documents");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Content = "This is a Test Text.",
+                            ContentTypeId = 1,
+                            Created = new DateTime(2020, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            FolderId = 4,
+                            Title = "Test Text",
+                            UserId = 3
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Content = "https://uit.instructure.com",
+                            ContentTypeId = 2,
+                            Created = new DateTime(2020, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            FolderId = 3,
+                            Title = "Test Url",
+                            UserId = 2
+                        });
                 });
 
             modelBuilder.Entity("CMS_Project.Models.Folder", b =>
@@ -106,6 +145,33 @@ namespace CMS_Project.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Folders");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "Bjørn",
+                            UserId = 1
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "Media",
+                            ParentId = 1,
+                            UserId = 1
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "Said",
+                            UserId = 2
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Name = "Morten",
+                            UserId = 3
+                        });
                 });
 
             modelBuilder.Entity("CMS_Project.Models.User", b =>
@@ -129,11 +195,38 @@ namespace CMS_Project.Migrations
 
                     b.Property<string>("Username")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedDate = new DateTime(2020, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Email = "test@test.com",
+                            Password = "test123",
+                            Username = "Bjørn"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreatedDate = new DateTime(2020, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Email = "test@test.com",
+                            Password = "test123",
+                            Username = "Said"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CreatedDate = new DateTime(2020, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Email = "test@test.com",
+                            Password = "test123",
+                            Username = "Morten"
+                        });
                 });
 
             modelBuilder.Entity("CMS_Project.Models.Document", b =>
