@@ -95,7 +95,12 @@ namespace CMS_Project.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Folders");
                 });
@@ -144,6 +149,17 @@ namespace CMS_Project.Migrations
                         .IsRequired();
 
                     b.Navigation("Folder");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("CMS_Project.Models.Folder", b =>
+                {
+                    b.HasOne("CMS_Project.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
                 });

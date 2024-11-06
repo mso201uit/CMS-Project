@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.SignalR;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
@@ -16,6 +17,9 @@ namespace CMS_Project.Models
         public DateTime CreatedDate { get; set; }
         
         // Navigasjons-egenskaper
+
+        public int UserId { get; set; }
+        public User User { get; set; } = null!;
         public ICollection<Document> Documents { get; set; } = new List<Document>();
     }
 }

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CMS_Project.Migrations
 {
     [DbContext(typeof(CMSContext))]
-    [Migration("20241106152841_AddFolderCRUD")]
-    partial class AddFolderCRUD
+    [Migration("20241106231044_migrations")]
+    partial class migrations
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -98,7 +98,12 @@ namespace CMS_Project.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Folders");
                 });
@@ -147,6 +152,17 @@ namespace CMS_Project.Migrations
                         .IsRequired();
 
                     b.Navigation("Folder");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("CMS_Project.Models.Folder", b =>
+                {
+                    b.HasOne("CMS_Project.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
                 });
