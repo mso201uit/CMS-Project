@@ -27,8 +27,8 @@ namespace CMS_Project.Models
         
         // Fremmednøkkel Folder
         [Required]
-        public int FolderId { get; set; }
+        public int? FolderId { get; set; }
 
-        public Folder Folder { get; set; } = null!;
+        public Folder? Folder { get; set; } = null!;
     }
 }

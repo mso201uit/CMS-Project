@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace CMS_Project.Models
+namespace CMS_Project.Models.DTOs
 {
     public class RegisterDto
     {

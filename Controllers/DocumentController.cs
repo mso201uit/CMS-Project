@@ -1,4 +1,7 @@
-﻿using CMS_Project.Models;
+﻿using CMS_Project.Models.DTOs;
+using CMS_Project.Models;
+using CMS_Project.Services;
+using CMS_Project.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,24 +14,18 @@ namespace CMS_Project.Controllers
     [ApiController]
     public class DocumentController : ControllerBase
     {
-        private readonly CMSContext _context;
+        private readonly IDocumentService _documentService;
 
-        public DocumentController(CMSContext context)
+        public DocumentController(IDocumentService documentService)
         {
-            _context = context;
+            _documentService = documentService;
         }
 
         // GET: api/Documents
         [HttpGet]
         public async Task<IActionResult> GetDocuments()
         {
-            // Hent brukerens ID fra JWT-tokenet
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-
-            // Hent alle dokumenter som tilhører brukeren
-            var documents = await _context.Documents
-                .Where(d => d.UserId == userId)
-                .ToListAsync();
+            var documents = await _documentService.GetAllDocumentsAsync();
             return Ok(documents);
         }
 
@@ -36,96 +33,94 @@ namespace CMS_Project.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult> GetDocument(int id)
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-
-            var Document = await _context.Documents
-                .FirstOrDefaultAsync(d => d.Id == id && d.UserId == userId);
-            if (Document == null)
-            {
+            var document = await _documentService.GetDocumentByIdAsync(id);
+            if (document == null)
                 return NotFound();
-            }
 
-            return Ok(Document);
+            return Ok(document);
         }
 
         // POST: api/Document
         [HttpPost]
-        public async Task<IActionResult> CreateDocument([FromBody] Document document)
+        public async Task<IActionResult> CreateDocument([FromBody] DocumentDto documentDto)
         {
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
+
+            try
+            {
+                var createdDocument = await _documentService.CreateDocumentAsync(documentDto);
+                return CreatedAtAction(nameof(GetDocument), new { id = createdDocument.Id }, createdDocument);
             }
-
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-            document.UserId = userId;
-            document.CreatedDate = DateTime.Now;
-
-            _context.Documents.Add(document);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetDocument), new { id = document.Id }, document);
+            catch (ArgumentException ex)
+            {
+                return Conflict(new { message = ex.Message });
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "En uventet feil oppstod.");
+            }
         }
 
         // PUT api/Documents/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateDocument(int id, [FromBody] Document document)
+        public async Task<IActionResult> UpdateDocument(int id, [FromBody] UpdateDocumentDto  updateDocumentDto)
         {
-            if (id != document.Id)
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            // Hent brukerens ID fra claims
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
             {
-                return BadRequest("ID i URL stemmer ikke overens med ID i dataen.");
+                return Unauthorized("Bruker er ikke autentisert.");
             }
-
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-
-            if (document.UserId != userId)
-            {
-                return Unauthorized();
-            }
-
-            _context.Entry(document).State = EntityState.Modified;
 
             try
             {
-                await _context.SaveChangesAsync();
+                var result = await _documentService.UpdateDocumentAsync(id, updateDocumentDto, userId);
+                if (!result)
+                    return NotFound();
+
+                return NoContent();
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!DocumentExists(id, userId))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                return StatusCode(500, "En feil oppstod under oppdatering av dokumentet.");
             }
-
-            return NoContent();
+            catch (Exception)
+            {
+                return StatusCode(500, "En uventet feil oppstod.");
+            }
         }
 
         // DELETE: api/Documents/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteDocument(int id)
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-
-            var document = await _context.Documents
-                .FirstOrDefaultAsync(d => d.Id == id && d.UserId == userId);
-            if (document == null)
+            // Hent brukerens ID fra claims
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
             {
-                return NotFound();
+                return Unauthorized("Bruker er ikke autentisert.");
             }
 
-            _context.Documents.Remove(document);
-            await _context.SaveChangesAsync();
+            try
+            {
+                var result = await _documentService.DeleteDocumentAsync(id);
+                if (!result)
+                    return NotFound();
 
-            return NoContent();
-        }
-
-        private bool DocumentExists(int id, int userId)
-        {
-            return _context.Documents.Any(e => e.Id == id && e.UserId == userId);
+                return NoContent();
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "En uventet feil oppstod.");
+            }
         }
     }
 }
