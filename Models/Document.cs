@@ -1,24 +1,34 @@
-﻿namespace CMS_Project.Models;
+﻿using System.ComponentModel.DataAnnotations;
 
-public class Document
+namespace CMS_Project.Models
 {
-    public int Id { get; set; }
-    public string Title { get; set; }
-    public string Content { get; set; }
-    public DateTime Created { get; set; }
-    
-    // Keys
-    public int UserId { get; set; }
-    public User User { get; set; }
-
-    public int ContentTypeId { get; set; }
-    public ContentType ContentType { get; set; }
-
-    public int? FolderId { get; set; }
-    public Folder Folder { get; set; }
-
-    public Document()
+    public class Document
     {
-        Created = DateTime.UtcNow;
+        [Key]
+        public int Id { get; set; }
+        
+        [Required]
+        [MaxLength(100)]
+        public string Title { get; set; } = string.Empty;
+        
+        [Required]
+        public string Content { get; set; } = string.Empty;
+        
+        [Required]
+        public string ContentType { get; set; }  = string.Empty;
+
+        public DateTime CreatedDate { get; set; }
+
+        // Fremmednøkkel User
+        [Required]
+        public int UserId { get; set; }
+
+        public User User { get; set; } = null!;
+        
+        // Fremmednøkkel Folder
+        [Required]
+        public int FolderId { get; set; }
+
+        public Folder Folder { get; set; } = null!;
     }
 }

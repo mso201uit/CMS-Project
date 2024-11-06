@@ -1,23 +1,19 @@
-﻿namespace CMS_Project.Models;
+﻿using System.ComponentModel.DataAnnotations;
 
-public class Folder
+namespace CMS_Project.Models
 {
-    public int Id { get; set; }
-    public string Name { get; set; }
-    
-    // Keys
-    public int? ParentId { get; set; }
-    public Folder Parent { get; set; }
-    
-    public int UserId { get; set; }
-    public User User { get; set; }
-    
-    public ICollection<Folder> subFolders { get; set; }
-    public ICollection<Document> Documents { get; set; }
-
-    public Folder()
+    public class Folder
     {
-        subFolders = new List<Folder>();
-        Documents = new List<Document>();
+        [Key]
+        public int Id { get; set; }
+        
+        [Required]
+        [MaxLength(100)]
+        public string Name { get; set; } = string.Empty;
+        
+        public DateTime CreatedDate { get; set; }
+        
+        // Navigasjons-egenskaper
+        public ICollection<Document> Documents { get; set; } = new List<Document>();
     }
 }

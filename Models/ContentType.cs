@@ -1,14 +1,14 @@
-﻿namespace CMS_Project.Models;
+﻿using System.ComponentModel.DataAnnotations;
 
-public class ContentType
+namespace CMS_Project.Models
 {
-    public int Id { get; set; }
-    public string Type { get; set; }
-    
-    public ICollection<Document> Documents { get; set; }
-
-    public ContentType()
+    public class ContentType
     {
-        Documents = new List<Document>();
+        [Key]
+        public int Id { get; set; }
+        
+        [Required]
+        public string Type { get; set; } = String.Empty;
+        
     }
 }

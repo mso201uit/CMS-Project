@@ -1,92 +1,130 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using System.Linq;
-using CMS_Project.Data;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using CMS_Project.Models;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Threading.Tasks;
-namespace CMS_Project.Controllers;
+using Microsoft.IdentityModel.Tokens;
 
-public class AuthController : Controller
+namespace CMS_Project.Controllers
 {
-    private readonly CMSContext _context;
+    [ApiController]
+    [Route("api/[controller]")]
+    public class AuthController : ControllerBase
+    {
+        private readonly CMSContext _context;
+        private readonly IConfiguration _configuration;
+        private readonly ILogger<AuthController> _logger;
 
-    public AuthController(CMSContext context)
-    {
-        _context = context;
-    }
-    
-    // GET /User/
-    public async Task<IActionResult> Index()
-    {
-        var users = await _context.Users.ToListAsync();
-        return View(users);
-    }
-    
-    // Add a new user
-    public IActionResult Create()
-    {
-        return View();
-    }
-    
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public IActionResult Create(User user)
-    {
-        if (ModelState.IsValid)
+        public AuthController(CMSContext context, IConfiguration configuration,  ILogger<AuthController> logger)
         {
-            _context.Users.Add(user);
-            _context.SaveChanges();
-            return RedirectToAction(nameof(Index));
+            _context = context;
+            _configuration = configuration;
+            _logger = logger;
         }
 
-        return View(user);
-    }
-    
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public IActionResult Edit(int id, User user)
-    {
-        if (id != user.Id)
+        // POST: api/Auth/register
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterDto  registerDto )
         {
-            return NotFound();
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+                if (await _context.Users.AnyAsync(u => u.Username == registerDto.Username))
+                {
+                    return Conflict(new { message = "Username already exists." });
+                }
+
+                if (await _context.Users.AnyAsync(u => u.Email == registerDto.Email))
+                {
+                    return Conflict(new { message = "Email already exists." });
+                }
+
+                var user = new User
+                {
+                    Username = registerDto.Username,
+                    Password = BCrypt.Net.BCrypt.HashPassword(registerDto.Password),
+                    Email = registerDto.Email,
+                    CreatedDate = DateTime.UtcNow,
+                    Documents = new List<Document>()
+                };
+                
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+
+                var token = GenerateJwtToken(user);
+
+                return Ok(new { message = "Registration successful.", token });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred during user registration.");
+                return StatusCode(500, "Internal server error.");
+            }
+        }
+        
+        // POST: api/Auth/login
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                var user = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Username == loginDto.Username);
+
+                if (user == null || !BCrypt.Net.BCrypt.Verify(loginDto.Password, user.Password))
+                {
+                    return Unauthorized(new { message = "Invalid username or password." });
+                }
+
+                var token = GenerateJwtToken(user);
+
+                return Ok(new { message = "Login successful.", token });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred during user login.");
+                return StatusCode(500, "Internal server error.");
+            }
         }
 
-        if (ModelState.IsValid)
+        // Implementer GenerateJwtToken-metoden
+        private string GenerateJwtToken(User user)
         {
-            _context.Update(user);
-            _context.SaveChanges();
-            return RedirectToAction(nameof(Index));
-        }
-        return View(user);
-    }
+            var key = _configuration["Jwt:Key"];
+            var issuer = _configuration["Jwt:Issuer"];
+            var audience = _configuration["Jwt:Audience"];
+            
+            if (string.IsNullOrEmpty(key))
+                throw new InvalidOperationException("JWT Key is not configured.");
+            
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
+            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
-    public IActionResult Delete(User id)
-    {
-        var user = _context.Users.Find(id);
-        if (user == null)
-        {
-            return NotFound();
-        }
-        return View(user);
-    }
-    
-    [HttpPost, ActionName("Delete")]
-    [ValidateAntiForgeryToken]
-    public IActionResult DeleteConfirmed(int id)
-    {
-        var user = _context.Users.Find(id);
-        _context.Users.Remove(user);
-        _context.SaveChanges();
-        return RedirectToAction(nameof(Index));
-    }
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Username),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            };
 
-    public IActionResult Details(int id)
-    {
-        var user = _context.Users.Find(id);
-        if (user == null)
-        {
-            return NotFound();
+            var token = new JwtSecurityToken(
+                issuer: issuer,
+                audience: audience,
+                claims: claims,
+                expires: DateTime.UtcNow.AddHours(1),
+                signingCredentials: credentials
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
-        return View(user);
     }
 }

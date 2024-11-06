@@ -1,12 +1,15 @@
-﻿using CMS_Project.Data;
+﻿using CMS_Project.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace CMS_Project.Controllers
 {
-    public class DocumentController : Controller
+    [Authorize]
+    [Route("api/[controller]")]
+    [ApiController]
+    public class DocumentController : ControllerBase
     {
         private readonly CMSContext _context;
 
@@ -15,97 +18,114 @@ namespace CMS_Project.Controllers
             _context = context;
         }
 
-        // GET /Documents/
-
-        [Authorize]
-        public IActionResult Index()
+        // GET: api/Documents
+        [HttpGet]
+        public async Task<IActionResult> GetDocuments()
         {
-            var Documents = _context.Documents.ToList();
-            return View(Documents);
+            // Hent brukerens ID fra JWT-tokenet
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+            // Hent alle dokumenter som tilhører brukeren
+            var documents = await _context.Documents
+                .Where(d => d.UserId == userId)
+                .ToListAsync();
+            return Ok(documents);
         }
 
-        // GET /Documents/5
-        public IActionResult View(int id)
+        // GET: api/Documents/5
+        [HttpGet("{id}")]
+        public async Task<ActionResult> GetDocument(int id)
         {
-            var Document = _context.Documents.Where(p=> p.Id==id);
-            return View(Document);
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+
+            var Document = await _context.Documents
+                .FirstOrDefaultAsync(d => d.Id == id && d.UserId == userId);
+            if (Document == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(Document);
         }
 
-        // GET /Documents/Create
-        public IActionResult Create()
-        {
-            return View();
-        }
-
-        // POST /Documents/Create [NOT DONE]
-        [Authorize]
+        // POST: api/Document
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(IFormCollection collection)
+        public async Task<IActionResult> CreateDocument([FromBody] Document document)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            document.UserId = userId;
+            document.CreatedDate = DateTime.Now;
+
+            _context.Documents.Add(document);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetDocument), new { id = document.Id }, document);
+        }
+
+        // PUT api/Documents/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateDocument(int id, [FromBody] Document document)
+        {
+            if (id != document.Id)
+            {
+                return BadRequest("ID i URL stemmer ikke overens med ID i dataen.");
+            }
+
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+
+            if (document.UserId != userId)
+            {
+                return Unauthorized();
+            }
+
+            _context.Entry(document).State = EntityState.Modified;
+
             try
             {
-                return RedirectToAction(nameof(Index));
+                await _context.SaveChangesAsync();
             }
-            catch (Exception e)
+            catch (DbUpdateConcurrencyException)
             {
-                Console.WriteLine(e);
-                TempData["message"] = "Obs something went wrong!";
-                return RedirectToAction(nameof(Index));
+                if (!DocumentExists(id, userId))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
             }
+
+            return NoContent();
         }
 
-        // GET /Documents/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        // DELETE: api/Documents/5
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteDocument(int id)
         {
-            if (id == null || _context.Documents == null) 
-            {
-                return NotFound();
-            }
-            var document = await _context.Documents.FindAsync(id);
-            if (document == null)
-            {
-                return NotFound();
-            }
-            ViewData["UserId"] = new SelectList(_context.Users, "Id", "Id", document.UserId);
-            ViewData["ContentType"] = new SelectList(_context.ContentTypes, "Id", "Id", document.ContentTypeId);
-            ViewData["Folder"] = new SelectList(_context.Folders, "Id", "Id", document.FolderId);
-            return View(document);
-        }
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
 
-        // GET /Documents/Delete
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null || _context.Documents == null)
-            {
-                return NotFound();
-            }
-
-            var document = await _context.Documents.Include(p => p.Id).FirstOrDefaultAsync();
+            var document = await _context.Documents
+                .FirstOrDefaultAsync(d => d.Id == id && d.UserId == userId);
             if (document == null)
             {
                 return NotFound();
             }
 
-            return View(document);
-        }
-        // POST /Documents/Delete
-        [Authorize]
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            if (_context.Documents == null)
-            {
-                return Problem("Entity set 'context.Documents  is null.");
-            }
-            var document = _context.Documents.FindAsync(id);
-            if (document != null)
-            {
-                _context.Remove(document);
-            }
+            _context.Documents.Remove(document);
             await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+
+            return NoContent();
+        }
+
+        private bool DocumentExists(int id, int userId)
+        {
+            return _context.Documents.Any(e => e.Id == id && e.UserId == userId);
         }
     }
 }
