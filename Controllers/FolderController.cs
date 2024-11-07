@@ -59,6 +59,15 @@ namespace CMS_Project.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetFolder(int id)
         {
+            //Get NameIdentifier from claims from user to get username, which then service gets userId to find folder user owns.
+            var claimsIdentity = (ClaimsIdentity)User.Identity;
+            var claims = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
+            var userId = await _userService.GetUserIdAsync(claims.Value);
+            if (userId == -1)
+            {
+                return StatusCode(500, "UserId not found. User might not exist.");
+            }
+
             try
             {
                 var folder = await _folderService.GetFolderByIdAsync(id);
@@ -81,10 +90,20 @@ namespace CMS_Project.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateFolder([FromBody] FolderDto folderDto)
         {
+            //ModelState check
             if (!ModelState.IsValid)
             {
                 _logger.LogWarning("Attempted to create a folder with invalid data.");
                 return BadRequest(ModelState);
+            }
+
+            //Get NameIdentifier from claims from user to get username, which then service gets userId to find folder user owns.
+            var claimsIdentity = (ClaimsIdentity)User.Identity;
+            var claims = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
+            var userId = await _userService.GetUserIdAsync(claims.Value);
+            if (userId == -1)
+            {
+                return StatusCode(500, "UserId not found. User might not exist.");
             }
 
             try
@@ -105,10 +124,19 @@ namespace CMS_Project.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateFolder(int id, [FromBody] UpdateFolderDto updateFolderDto)
         {
+            //ModelState check
             if (!ModelState.IsValid)
             {
                 _logger.LogWarning($"Attempted to update folder with ID {id} with invalid data.");
                 return BadRequest(ModelState);
+            }
+            //Get NameIdentifier from claims from user to get username, which then service gets userId to find folder user owns.
+            var claimsIdentity = (ClaimsIdentity)User.Identity;
+            var claims = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
+            var userId = await _userService.GetUserIdAsync(claims.Value);
+            if (userId == -1)
+            {
+                return StatusCode(500, "UserId not found. User might not exist.");
             }
 
             try
@@ -134,6 +162,15 @@ namespace CMS_Project.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteFolder(int id)
         {
+            //Get NameIdentifier from claims from user to get username, which then service gets userId to find folder user owns.
+            var claimsIdentity = (ClaimsIdentity)User.Identity;
+            var claims = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
+            var userId = await _userService.GetUserIdAsync(claims.Value);
+            if (userId == -1)
+            {
+                return StatusCode(500, "UserId not found. User might not exist.");
+            }
+
             try
             {
                 var result = await _folderService.DeleteFolderAsync(id);

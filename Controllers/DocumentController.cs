@@ -116,6 +116,7 @@ namespace CMS_Project.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateDocument(int id, [FromBody] UpdateDocumentDto  updateDocumentDto)
         {
+            //ModelState check
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
@@ -154,11 +155,13 @@ namespace CMS_Project.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteDocument(int id)
         {
-            // Hent brukerens ID fra claims
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            //Get NameIdentifier from claims from user to get username, which then service gets userId to find folder user owns.
+            var claimsIdentity = (ClaimsIdentity)User.Identity;
+            var claims = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
+            var userId = await _userService.GetUserIdAsync(claims.Value);
+            if (userId == -1)
             {
-                return Unauthorized("Bruker er ikke autentisert.");
+                return StatusCode(500, "UserId not found. User might not exist.");
             }
 
             try
