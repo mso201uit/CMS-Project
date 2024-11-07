@@ -48,11 +48,18 @@ namespace CMS_Project.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ParentId = table.Column<int>(type: "int", nullable: true),
+                    ParentFolderId = table.Column<int>(type: "int", nullable: true),
                     UserId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Folders", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Folders_Folders_ParentFolderId",
+                        column: x => x.ParentFolderId,
+                        principalTable: "Folders",
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Folders_Users_UserId",
                         column: x => x.UserId,
@@ -100,6 +107,11 @@ namespace CMS_Project.Migrations
                 name: "IX_Documents_UserId",
                 table: "Documents",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Folders_ParentFolderId",
+                table: "Folders",
+                column: "ParentFolderId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Folders_UserId",

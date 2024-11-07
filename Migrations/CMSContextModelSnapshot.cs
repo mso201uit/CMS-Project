@@ -95,10 +95,18 @@ namespace CMS_Project.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int?>("ParentFolderId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ParentId")
+                        .HasColumnType("int");
+
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ParentFolderId");
 
                     b.HasIndex("UserId");
 
@@ -155,17 +163,25 @@ namespace CMS_Project.Migrations
 
             modelBuilder.Entity("CMS_Project.Models.Folder", b =>
                 {
+                    b.HasOne("CMS_Project.Models.Folder", "ParentFolder")
+                        .WithMany("ChildrenFolders")
+                        .HasForeignKey("ParentFolderId");
+
                     b.HasOne("CMS_Project.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("ParentFolder");
+
                     b.Navigation("User");
                 });
 
             modelBuilder.Entity("CMS_Project.Models.Folder", b =>
                 {
+                    b.Navigation("ChildrenFolders");
+
                     b.Navigation("Documents");
                 });
 
