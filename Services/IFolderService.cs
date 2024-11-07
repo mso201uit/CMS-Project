@@ -10,7 +10,7 @@ namespace CMS_Project.Services
         Task<IEnumerable<Folder>> GetAllFoldersAsync(int UserId);
         Task<Folder> GetFolderByIdAsync(int id);
         Task<Folder> CreateFolderAsync(FolderDto folderDto);
-        Task<bool> UpdateFolderAsync(int id, UpdateFolderDto updateFolderDto);
+        Task<bool> UpdateFolderAsync(int id, UpdateFolderDto updateFolderDto, int userId);
         Task<bool> DeleteFolderAsync(int id, int userId);
     }
 }

@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CMS_Project.Migrations
 {
     [DbContext(typeof(CMSContext))]
-    [Migration("20241107062927_migrations")]
+    [Migration("20241107065521_migrations")]
     partial class migrations
     {
         /// <inheritdoc />
@@ -99,9 +99,6 @@ namespace CMS_Project.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<int?>("ParentFolderId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ParentId")
                         .HasColumnType("int");
 
                     b.Property<int>("UserId")

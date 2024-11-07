@@ -122,6 +122,10 @@ namespace CMS_Project.Controllers
 
                 return CreatedAtAction(nameof(GetFolder), new { id = createdFolder.Id }, createdFolder);
             }
+            catch (ArgumentException ex)
+            {
+                return Conflict(new { message = ex.Message });
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"An error occured while creating: {folderDto.Name}");
@@ -150,7 +154,7 @@ namespace CMS_Project.Controllers
 
             try
             {
-                var result = await _folderService.UpdateFolderAsync(id, updateFolderDto);
+                var result = await _folderService.UpdateFolderAsync(id, updateFolderDto, userId);
                 if (!result)
                 {
                     _logger.LogWarning($"Folder with ID {id} was not found for update.");
@@ -160,10 +164,14 @@ namespace CMS_Project.Controllers
                 _logger.LogInformation($"Folder with ID {id} was updated successfully.");
                 return NoContent();
             }
+            catch (ArgumentException ex)
+            {
+                return Conflict(new { message = ex.Message });
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"An error occurred while updating folder with ID {id}.");
-                return StatusCode(500, "En uventet feil oppstod.");
+                return StatusCode(500, "An unexpected Error occured.");
             }
         }
 

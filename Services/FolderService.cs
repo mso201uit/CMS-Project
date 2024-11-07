@@ -42,8 +42,20 @@ namespace CMS_Project.Services
             {
                 Name = folderDto.Name,
                 UserId = folderDto.UserId,
+                ParentFolderId = folderDto.ParentFolderId,
                 CreatedDate = DateTime.UtcNow
             };
+
+            //Check if user owns parent folder:
+            if (folder.ParentFolderId != null)
+            {
+                var parentfolder = await _context.Folders.FirstOrDefaultAsync(f => f.Id == folderDto.ParentFolderId);
+                if(parentfolder != null)
+                {
+                    if (folderDto.UserId != parentfolder.UserId)
+                        throw new ArgumentException("User doesn't own parent folder.");
+                }
+            }
 
             _context.Folders.Add(folder);
             await _context.SaveChangesAsync();
@@ -51,13 +63,28 @@ namespace CMS_Project.Services
             return folder;
         }
 
-        public async Task<bool> UpdateFolderAsync(int id, UpdateFolderDto updateFolderDto)
+        public async Task<bool> UpdateFolderAsync(int id, UpdateFolderDto updateFolderDto, int userId)
         {
+            //check if folder exists
             var folder = await _context.Folders.FindAsync(id);
             if (folder == null)
-                return false;
+                throw new ArgumentException("folder not found.");
+            //check if user owns folder.
+            if (folder.UserId != userId)
+                throw new ArgumentException("User doesn't own folder.");
+
+            //if parentfolder exists:
+            if (updateFolderDto.ParentFolderId != null)
+            {
+                //check if user owns parent folder.
+                var parentfolder = await _context.Folders.FirstAsync(f => f.Id == updateFolderDto.ParentFolderId);
+                if (folder.ParentFolderId == null)
+                    if (parentfolder.UserId != userId)
+                        throw new ArgumentException("User doesn't own parent folder.");
+            }
 
             folder.Name = updateFolderDto.Name;
+            folder.ParentFolderId = updateFolderDto.ParentFolderId;
 
             _context.Entry(folder).State = EntityState.Modified;
 

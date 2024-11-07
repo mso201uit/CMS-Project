@@ -98,9 +98,6 @@ namespace CMS_Project.Migrations
                     b.Property<int?>("ParentFolderId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("ParentId")
-                        .HasColumnType("int");
-
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 

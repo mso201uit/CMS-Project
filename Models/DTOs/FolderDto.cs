@@ -8,9 +8,9 @@ namespace CMS_Project.Models.DTOs
         [Required]
         [MaxLength(100)]
         public string Name { get; set; } = string.Empty;
-        
-        //[Required] if this is required, then the user needs to get a root folder to put everything else under, when their account get created.
-        public int ParentId { get; set; }
+
+        //[Required] can't be used unless you give them start folder from the begining
+        public int? ParentFolderId { get; set; }
          
         [Required]
         public int UserId { get; set; }
