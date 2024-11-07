@@ -10,7 +10,7 @@ namespace CMS_Project.Services
         Task<IEnumerable<Document>> GetAllDocumentsAsync(int UserId);
         Task<Document> GetDocumentByIdAsync(int id);
         Task<Document> CreateDocumentAsync(DocumentDto documentDto);
-        Task<bool> DeleteDocumentAsync(int id);
+        Task<bool> DeleteDocumentAsync(int id, int userId);
         Task<bool> UpdateDocumentAsync(int id, UpdateDocumentDto updateDocumentDto, int userId);
 
     }

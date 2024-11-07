@@ -38,16 +38,20 @@ namespace CMS_Project.Services
 
         public async Task<Document> CreateDocumentAsync(DocumentDto documentDto)
         {
-            // Sjekk om bruker og mappe eksisterer
+            // checks if user and folder exists
             var user = await _context.Users.FindAsync(documentDto.UserId);
             var folder = await _context.Folders.FindAsync(documentDto.FolderId);
 
             if (user == null)
-                throw new ArgumentException("Bruker ikke funnet.");
+                throw new ArgumentException("User not found.");
 
             if (folder == null)
-                throw new ArgumentException("Mappe ikke funnet.");
-
+                throw new ArgumentException("folder not found.");
+            // checks if user owns the folder
+            if (folder.UserId != user.Id)
+            {
+                throw new ArgumentException("User doesn't own the folder.");
+            }
             var document = new Document
             {
                 Title = documentDto.Title,
@@ -64,16 +68,25 @@ namespace CMS_Project.Services
             return document;
         }
 
-        public async Task<bool> DeleteDocumentAsync(int id)
+        public async Task<bool> DeleteDocumentAsync(int id, int userId)
         {
+            //get document by id
             var document = await _context.Documents.FindAsync(id);
+            //check if it's found
             if (document == null)
                 return false;
-
-            _context.Documents.Remove(document);
-            await _context.SaveChangesAsync();
-
-            return true;
+            //checks if document is owned by the user
+            if (userId == document.UserId)
+            {
+                //proceed with deleting
+                _context.Documents.Remove(document);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         public async Task<bool> UpdateDocumentAsync(int id, UpdateDocumentDto updateDocumentDto, int userId)
@@ -82,11 +95,16 @@ namespace CMS_Project.Services
             if (document == null)
                 return false;
 
-            // Sjekk om dokumentet tilhører brukeren
+            // check if document belongs to user
             if (document.UserId != userId)
-                throw new UnauthorizedAccessException("Du har ikke tilgang til dette dokumentet.");
+                throw new UnauthorizedAccessException("User doesn't have access to this document.");
+            // check if folder belongs to user
+            var folder = await _context.Folders.FindAsync(updateDocumentDto.FolderId);
+            if (folder.UserId != userId)
+                throw new UnauthorizedAccessException("User doesn't have access to this folder.");
 
-            // Oppdater egenskaper
+
+            // update properties
             document.Title = updateDocumentDto.Title;
             document.Content = updateDocumentDto.Content;
             document.ContentType = updateDocumentDto.ContentType;

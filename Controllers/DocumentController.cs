@@ -99,8 +99,16 @@ namespace CMS_Project.Controllers
 
             try
             {
-                var createdDocument = await _documentService.CreateDocumentAsync(documentDto);
-                return CreatedAtAction(nameof(GetDocument), new { id = createdDocument.Id }, createdDocument);
+                //Checks if submited userid is the same as the person that is logged in. 
+                if(documentDto.UserId == userId)
+                {
+                    var createdDocument = await _documentService.CreateDocumentAsync(documentDto);
+                    return CreatedAtAction(nameof(GetDocument), new { id = createdDocument.Id }, createdDocument);
+                }
+                else
+                {
+                    return StatusCode(500, "userId isn't same as your own."); ;
+                }
             }
             catch (ArgumentException ex)
             {
@@ -143,11 +151,11 @@ namespace CMS_Project.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                return StatusCode(500, "En feil oppstod under oppdatering av dokumentet.");
+                return StatusCode(500, "An error occursed when updating the file.");
             }
             catch (Exception)
             {
-                return StatusCode(500, "En uventet feil oppstod.");
+                return StatusCode(500, "Unexpected error occured.");
             }
         }
 
@@ -166,7 +174,7 @@ namespace CMS_Project.Controllers
 
             try
             {
-                var result = await _documentService.DeleteDocumentAsync(id);
+                var result = await _documentService.DeleteDocumentAsync(id, userId);
                 if (!result)
                     return NotFound();
 
