@@ -2,6 +2,8 @@ users with name and password, who owns Documents and Folders.
 Folders can have Folders and Documents.
 Content type isn't used as much. it's basically just a string.
 
+NOTE: folder creation requires your first folderParentId to be NULL!!!
+
 DTOs:
 FolderDto, updateFolderDto: (string)Name, (int)ParentFolderId
 DocumentDto, updateDocumentDto: (string)Title, (string)Content,(string)ContentType,(int)FolderId
@@ -34,3 +36,5 @@ the userid is used to check ownership in elements after.
 -create(dto) creates element of that type with [dto].
 -update(id,dto) updates selected element with [id], and updates it with [dto]. service checks the ownerships for updating.
 -Delete(id) deletes element with [id]
+
+NOTE: folder creation requires your first folderParentId to be NULL!!!

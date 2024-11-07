@@ -42,7 +42,7 @@ namespace CMS_Project.Services
         }
 
         /// <summary>
-        /// CREATE folder by Dto and checks ownership
+        /// CREATE folder by Dto and checks ownership. First folder needs parentFolderId to be null!!
         /// </summary>
         /// <param name="folderDto"></param>
         /// <param name="userId"></param>
