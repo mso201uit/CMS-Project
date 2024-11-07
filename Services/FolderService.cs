@@ -15,7 +15,11 @@ namespace CMS_Project.Services
             _context = context;
         }
 
-        //GET all folders where UserId = Documents-User.Id
+        /// <summary>
+        /// GET all folders where UserId = Documents-User.Id
+        /// </summary>
+        /// <param name="UserId"></param>
+        /// <returns></returns>
         public async Task<IEnumerable<Folder>> GetAllFoldersAsync(int UserId)
         {
             return await _context.Folders
