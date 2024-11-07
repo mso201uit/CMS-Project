@@ -8,5 +8,6 @@ namespace CMS_Project.Services
     {
         Task<User> RegisterUserAsync(RegisterDto registerDto);
         Task<string> AuthenticateUserAsync(LoginDto loginDto);
+        Task<int> GetUserIdAsync(string username);
     }
 }

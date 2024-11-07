@@ -15,18 +15,36 @@ namespace CMS_Project.Controllers
     public class DocumentController : ControllerBase
     {
         private readonly IDocumentService _documentService;
+        private readonly IUserService _userService;
 
-        public DocumentController(IDocumentService documentService)
+        public DocumentController(IDocumentService documentService, IUserService userService)
         {
             _documentService = documentService;
+            _userService = userService;
         }
 
         // GET: api/Documents
         [HttpGet]
         public async Task<IActionResult> GetDocuments()
         {
-            var documents = await _documentService.GetAllDocumentsAsync();
-            return Ok(documents);
+            //Get NameIdentifier from claims from user to get username, which then service gets userId to find folder user owns.
+            var claimsIdentity = (ClaimsIdentity)User.Identity;
+            var claims = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
+            var userId = await _userService.GetUserIdAsync(claims.Value);
+            if (userId == -1)
+            {
+                return StatusCode(500, "UserId not found. User might not exist.");
+            }
+
+            try
+            {
+                var documents = await _documentService.GetAllDocumentsAsync(userId);
+                return Ok(documents);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         // GET: api/Documents/5

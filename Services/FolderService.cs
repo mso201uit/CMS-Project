@@ -15,10 +15,13 @@ namespace CMS_Project.Services
             _context = context;
         }
 
-        public async Task<IEnumerable<Folder>> GetAllFoldersAsync()
+        //GET all folders where UserId = Documents-User.Id
+        public async Task<IEnumerable<Folder>> GetAllFoldersAsync(int UserId)
         {
             return await _context.Folders
                 .Include(f => f.Documents)
+                .Include(f => f.User)
+                .Where(f => f.UserId == UserId)
                 .ToListAsync();
         }
 
@@ -34,6 +37,7 @@ namespace CMS_Project.Services
             var folder = new Folder
             {
                 Name = folderDto.Name,
+                UserId = folderDto.UserId,
                 CreatedDate = DateTime.UtcNow
             };
 

@@ -18,11 +18,13 @@ namespace CMS_Project.Services
             _context = context;
         }
 
-        public async Task<IEnumerable<Document>> GetAllDocumentsAsync()
+        //GET all documents where UserId = Documents-User.Id
+        public async Task<IEnumerable<Document>> GetAllDocumentsAsync(int UserId)
         {
             return await _context.Documents
                 .Include(d => d.User)
                 .Include(d => d.Folder)
+                .Where(d => d.UserId == UserId)
                 .ToListAsync();
         }
         

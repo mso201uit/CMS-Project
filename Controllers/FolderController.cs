@@ -1,10 +1,12 @@
-﻿using CMS_Project.Models.DTOs;
+﻿using CMS_Project.Models;
+using CMS_Project.Models.DTOs;
 using CMS_Project.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Linq.Expressions;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 
@@ -17,13 +19,14 @@ namespace CMS_Project.Controllers
     {
         private readonly IFolderService _folderService;
         private readonly ILogger<FolderController> _logger;
+        private readonly IUserService _userService;
 
 
-        public FolderController(IFolderService folderService, ILogger<FolderController> logger)
+        public FolderController(IFolderService folderService, ILogger<FolderController> logger, IUserService userService)
         {
             _folderService = folderService;
             _logger = logger;
-
+            _userService = userService;
             
         }
 
@@ -31,9 +34,18 @@ namespace CMS_Project.Controllers
         [HttpGet]
         public async Task<IActionResult> GetFolders()
         {
+            //Get NameIdentifier from claims from user to get username, which then service gets userId to find folder user owns.
+            var claimsIdentity = (ClaimsIdentity)User.Identity;
+            var claims = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
+            var userId = await _userService.GetUserIdAsync(claims.Value);
+            if (userId == -1)
+            {
+                return StatusCode(500, "UserId not found. User might not exist.");
+            }
+
             try
             {
-                var folders = await _folderService.GetAllFoldersAsync();
+                var folders = await _folderService.GetAllFoldersAsync(userId);
                 return Ok(folders);
             }
             catch (Exception ex)

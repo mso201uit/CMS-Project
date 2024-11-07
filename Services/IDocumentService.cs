@@ -7,7 +7,7 @@ namespace CMS_Project.Services
 {
     public interface IDocumentService
     {
-        Task<IEnumerable<Document>> GetAllDocumentsAsync();
+        Task<IEnumerable<Document>> GetAllDocumentsAsync(int UserId);
         Task<Document> GetDocumentByIdAsync(int id);
         Task<Document> CreateDocumentAsync(DocumentDto documentDto);
         Task<bool> DeleteDocumentAsync(int id);

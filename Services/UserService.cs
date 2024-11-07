@@ -87,5 +87,19 @@ namespace CMS_Project.Services
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
+        public async Task<int> GetUserIdAsync(string username)
+        {
+            try
+            {
+                var user = await _context.Users.SingleOrDefaultAsync(u => u.Username == username);
+                return user.Id;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return -1;
+            }
+        }
     }
 }

@@ -7,7 +7,7 @@ namespace CMS_Project.Services
 {
     public interface IFolderService
     {
-        Task<IEnumerable<Folder>> GetAllFoldersAsync();
+        Task<IEnumerable<Folder>> GetAllFoldersAsync(int UserId);
         Task<Folder> GetFolderByIdAsync(int id);
         Task<Folder> CreateFolderAsync(FolderDto folderDto);
         Task<bool> UpdateFolderAsync(int id, UpdateFolderDto updateFolderDto);
