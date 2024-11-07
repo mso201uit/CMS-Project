@@ -11,8 +11,5 @@ namespace CMS_Project.Models.DTOs
 
         //[Required] can't be used unless you give them start folder from the begining
         public int? ParentFolderId { get; set; }
-         
-        [Required]
-        public int UserId { get; set; }
     }
 }

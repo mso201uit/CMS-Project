@@ -15,9 +15,6 @@ namespace CMS_Project.Models.DTOs
         public string ContentType { get; set; } = string.Empty;
 
         [Required]
-        public int UserId { get; set; }
-
-        [Required]
         public int FolderId { get; set; }
     }
 }

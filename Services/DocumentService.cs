@@ -36,19 +36,15 @@ namespace CMS_Project.Services
                 .FirstOrDefaultAsync(d => d.Id == id);
         }
 
-        public async Task<Document> CreateDocumentAsync(DocumentDto documentDto)
+        public async Task<Document> CreateDocumentAsync(DocumentDto documentDto, int userId)
         {
             // checks if user and folder exists
-            var user = await _context.Users.FindAsync(documentDto.UserId);
             var folder = await _context.Folders.FindAsync(documentDto.FolderId);
-
-            if (user == null)
-                throw new ArgumentException("User not found.");
 
             if (folder == null)
                 throw new ArgumentException("folder not found.");
             // checks if user owns the folder
-            if (folder.UserId != user.Id)
+            if (folder.UserId != userId)
             {
                 throw new ArgumentException("User doesn't own the folder.");
             }
@@ -58,7 +54,7 @@ namespace CMS_Project.Services
                 Content = documentDto.Content,
                 ContentType = documentDto.ContentType,
                 CreatedDate = DateTime.UtcNow,
-                UserId = documentDto.UserId,
+                UserId = userId,
                 FolderId = documentDto.FolderId
             };
 

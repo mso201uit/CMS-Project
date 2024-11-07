@@ -109,15 +109,10 @@ namespace CMS_Project.Controllers
             {
                 return StatusCode(500, "UserId not found. User might not exist.");
             }
-            //check if userid matches submitted userid
-            if (userId != folderDto.UserId)
-            {
-                return StatusCode(500, "UserId doesn't match user.");
-            }
 
             try
             {
-                var createdFolder = await _folderService.CreateFolderAsync(folderDto);
+                var createdFolder = await _folderService.CreateFolderAsync(folderDto, userId);
                 _logger.LogInformation($"Folder created with ID {createdFolder.Id}.");
 
                 return CreatedAtAction(nameof(GetFolder), new { id = createdFolder.Id }, createdFolder);

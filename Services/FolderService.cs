@@ -19,7 +19,7 @@ namespace CMS_Project.Services
         /// GET all folders where UserId = Documents-User.Id
         /// </summary>
         /// <param name="UserId"></param>
-        /// <returns></returns>
+        /// <returns>All folder for given user.</returns>
         public async Task<IEnumerable<Folder>> GetAllFoldersAsync(int UserId)
         {
             return await _context.Folders
@@ -36,12 +36,12 @@ namespace CMS_Project.Services
                 .FirstOrDefaultAsync(f => f.Id == id);
         }
 
-        public async Task<Folder> CreateFolderAsync(FolderDto folderDto)
+        public async Task<Folder> CreateFolderAsync(FolderDto folderDto, int userId)
         {
             var folder = new Folder
             {
                 Name = folderDto.Name,
-                UserId = folderDto.UserId,
+                UserId = userId,
                 ParentFolderId = folderDto.ParentFolderId,
                 CreatedDate = DateTime.UtcNow
             };
@@ -52,7 +52,7 @@ namespace CMS_Project.Services
                 var parentfolder = await _context.Folders.FirstOrDefaultAsync(f => f.Id == folderDto.ParentFolderId);
                 if(parentfolder != null)
                 {
-                    if (folderDto.UserId != parentfolder.UserId)
+                    if (folder.UserId != parentfolder.UserId)
                         throw new ArgumentException("User doesn't own parent folder.");
                 }
             }

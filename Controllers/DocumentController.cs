@@ -99,16 +99,8 @@ namespace CMS_Project.Controllers
 
             try
             {
-                //Checks if submited userid is the same as the person that is logged in. 
-                if(documentDto.UserId == userId)
-                {
-                    var createdDocument = await _documentService.CreateDocumentAsync(documentDto);
-                    return CreatedAtAction(nameof(GetDocument), new { id = createdDocument.Id }, createdDocument);
-                }
-                else
-                {
-                    return StatusCode(500, "userId isn't same as your own."); ;
-                }
+                var createdDocument = await _documentService.CreateDocumentAsync(documentDto, userId);
+                return CreatedAtAction(nameof(GetDocument), new { id = createdDocument.Id }, createdDocument);
             }
             catch (ArgumentException ex)
             {
