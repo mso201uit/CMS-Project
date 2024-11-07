@@ -32,6 +32,14 @@ namespace CMS_Project.Data
                 .WithMany(f => f.Documents)
                 .HasForeignKey(d => d.FolderId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            /** Cascade fix?
+            modelBuilder.Entity<Folder>()
+                .HasOne(d => d.ParentFolder)
+                .WithMany(d =>d.ChildrenFolders)
+                .HasForeignKey(d => d.ParentFolderId)
+                .OnDelete(DeleteBehavior.Cascade);
+            */
         }
     }
 }
