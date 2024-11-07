@@ -19,7 +19,7 @@ namespace CMS_Project.Services
         /// GET all folders where UserId = Documents-User.Id
         /// </summary>
         /// <param name="UserId"></param>
-        /// <returns>All folder for given user.</returns>
+        /// <returns>List of folders by given user id</returns>
         public async Task<IEnumerable<Folder>> GetAllFoldersAsync(int UserId)
         {
             return await _context.Folders
@@ -29,6 +29,11 @@ namespace CMS_Project.Services
                 .ToListAsync();
         }
 
+        /// <summary>
+        /// GET folder by id given
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>folder by id given</returns>
         public async Task<Folder> GetFolderByIdAsync(int id)
         {
             return await _context.Folders
@@ -36,6 +41,13 @@ namespace CMS_Project.Services
                 .FirstOrDefaultAsync(f => f.Id == id);
         }
 
+        /// <summary>
+        /// CREATE folder by Dto and checks ownership
+        /// </summary>
+        /// <param name="folderDto"></param>
+        /// <param name="userId"></param>
+        /// <returns>document created</returns>
+        /// <exception cref="ArgumentException"></exception>
         public async Task<Folder> CreateFolderAsync(FolderDto folderDto, int userId)
         {
             var folder = new Folder
@@ -63,6 +75,14 @@ namespace CMS_Project.Services
             return folder;
         }
 
+        /// <summary>
+        /// UPDATE folder by given id and checks ownership. Updates by dto
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="updateFolderDto"></param>
+        /// <param name="userId"></param>
+        /// <returns>true if completed, false if not</returns>
+        /// <exception cref="ArgumentException"></exception>
         public async Task<bool> UpdateFolderAsync(int id, UpdateFolderDto updateFolderDto, int userId)
         {
             //check if folder exists
@@ -107,6 +127,12 @@ namespace CMS_Project.Services
             return true;
         }
 
+        /// <summary>
+        /// DELETE folder by given id and checks ownership
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="userId"></param>
+        /// <returns>true when deleted and false if failed</returns>
         public async Task<bool> DeleteFolderAsync(int id, int userId)
         {
             var folder = await _context.Folders.FindAsync(id);
@@ -125,6 +151,11 @@ namespace CMS_Project.Services
             return false;
         }
 
+        /// <summary>
+        /// checks if folder with id exists
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>true if exists, and false if not</returns>
         private async Task<bool> FolderExists(int id)
         {
             return await _context.Folders.AnyAsync(f => f.Id == id);

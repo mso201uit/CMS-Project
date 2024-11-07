@@ -18,7 +18,11 @@ namespace CMS_Project.Services
             _context = context;
         }
 
-        //GET all documents where UserId = Documents-User.Id
+        /// <summary>
+        /// GET all documents where UserId = Documents-User.Id
+        /// </summary>
+        /// <param name="UserId"></param>
+        /// <returns>List of Documents by given user id</returns>
         public async Task<IEnumerable<Document>> GetAllDocumentsAsync(int UserId)
         {
             return await _context.Documents
@@ -28,6 +32,11 @@ namespace CMS_Project.Services
                 .ToListAsync();
         }
         
+        /// <summary>
+        /// GET document by id given
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>document by id given</returns>
         public async Task<Document> GetDocumentByIdAsync(int id)
         {
             return await _context.Documents
@@ -36,6 +45,13 @@ namespace CMS_Project.Services
                 .FirstOrDefaultAsync(d => d.Id == id);
         }
 
+        /// <summary>
+        /// CREATE document by Dto and checks ownership
+        /// </summary>
+        /// <param name="documentDto"></param>
+        /// <param name="userId"></param>
+        /// <returns>document created</returns>
+        /// <exception cref="ArgumentException"></exception>
         public async Task<Document> CreateDocumentAsync(DocumentDto documentDto, int userId)
         {
             // checks if user and folder exists
@@ -64,6 +80,12 @@ namespace CMS_Project.Services
             return document;
         }
 
+        /// <summary>
+        /// DELETE document by given id and checks ownership
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="userId"></param>
+        /// <returns>true when deleted and false if failed</returns>
         public async Task<bool> DeleteDocumentAsync(int id, int userId)
         {
             //get document by id
@@ -85,6 +107,14 @@ namespace CMS_Project.Services
             }
         }
 
+        /// <summary>
+        /// UPDATE document by given id and checks ownership. Updates by dto
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="updateDocumentDto"></param>
+        /// <param name="userId"></param>
+        /// <returns>true if completed, false if not</returns>
+        /// <exception cref="UnauthorizedAccessException"></exception>
         public async Task<bool> UpdateDocumentAsync(int id, UpdateDocumentDto updateDocumentDto, int userId)
         {
             var document = await _context.Documents.FindAsync(id);
@@ -127,6 +157,11 @@ namespace CMS_Project.Services
             return true;
         }
 
+        /// <summary>
+        /// checks if document with id exists
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>true if exists, and false if not</returns>
         private async Task<bool> DocumentExists(int id)
         {
             return await _context.Documents.AnyAsync(e => e.Id == id);

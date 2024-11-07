@@ -20,6 +20,12 @@ namespace CMS_Project.Services
             _configuration = configuration;
         }
 
+        /// <summary>
+        /// Register user by Dto
+        /// </summary>
+        /// <param name="registerDto"></param>
+        /// <returns>user</returns>
+        /// <exception cref="ArgumentException"></exception>
         public async Task<User> RegisterUserAsync(RegisterDto registerDto)
         {
             // Sjekk om brukernavn eller e-post allerede finnes
@@ -45,6 +51,12 @@ namespace CMS_Project.Services
             return user;
         }
 
+        /// <summary>
+        /// check for username and verify the password. generates jwt and returns it
+        /// </summary>
+        /// <param name="loginDto"></param>
+        /// <returns>JWT token</returns>
+        /// <exception cref="UnauthorizedAccessException"></exception>
         public async Task<string> AuthenticateUserAsync(LoginDto loginDto)
         {
             var user = await _context.Users
@@ -58,6 +70,12 @@ namespace CMS_Project.Services
             return token;
         }
 
+        /// <summary>
+        /// Generates JWT token by given user
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns>JWT token</returns>
+        /// <exception cref="InvalidOperationException"></exception>
         private string GenerateJwtToken(User user)
         {
             var key = _configuration["Jwt:Key"];
@@ -88,6 +106,11 @@ namespace CMS_Project.Services
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
+        /// <summary>
+        /// Find user by username and returns id. if failed returns -1
+        /// </summary>
+        /// <param name="username"></param>
+        /// <returns>user id. -1 if failed</returns>
         public async Task<int> GetUserIdAsync(string username)
         {
             try
