@@ -74,15 +74,19 @@ namespace CMS_Project.Controllers
                 if (folder == null)
                 {
                     _logger.LogWarning($"Folder with ID {id} was not found.");
-                    return NotFound(new { message = $"Mappe med ID {id} ble ikke funnet." });
+                    return NotFound(new { message = $"Folder with ID {id} was not found." });
+                }
+                if (folder.UserId == userId)
+                {
+                    return Ok(folder);
                 }
 
-                return Ok(folder);
+                return StatusCode(500, "User doesn't own this folder.");
             }
             catch (Exception ex)
             {
                 _logger.LogWarning($"Folder with ID {id} was not found.");
-                return NotFound(new { message = $"Mappe med ID {id} ble ikke funnet." });
+                return NotFound(new { message = $"Folder with ID  {id} was not found." });
             }
         }
 
@@ -105,6 +109,11 @@ namespace CMS_Project.Controllers
             {
                 return StatusCode(500, "UserId not found. User might not exist.");
             }
+            //check if userid matches submitted userid
+            if (userId != folderDto.UserId)
+            {
+                return StatusCode(500, "UserId doesn't match user.");
+            }
 
             try
             {
@@ -115,8 +124,8 @@ namespace CMS_Project.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"En feil oppstod under opprettelse av mappe: {folderDto.Name}");
-                return StatusCode(500, "En uventet feil oppstod.");
+                _logger.LogError(ex, $"An error occured while creating: {folderDto.Name}");
+                return StatusCode(500, "Unexpected error occured.");
             }
         }
 
@@ -173,11 +182,11 @@ namespace CMS_Project.Controllers
 
             try
             {
-                var result = await _folderService.DeleteFolderAsync(id);
+                var result = await _folderService.DeleteFolderAsync(id, userId);
                 if (!result)
                 {
                     _logger.LogWarning($"Folder with ID {id} was not found for deletion.");
-                    return NotFound(new { message = $"Mappe med ID {id} ble ikke funnet." });
+                    return NotFound(new { message = $"Folder with ID {id} was not found." });
                 }
 
                 _logger.LogWarning($"Folder with ID {id} was not found for deletion.");
@@ -186,7 +195,7 @@ namespace CMS_Project.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"An error occurred while deleting folder with ID {id}.");
-                return StatusCode(500, "En uventet feil oppstod.");
+                return StatusCode(500, "An unexpected error occured.");
             }
         }
     }

@@ -76,7 +76,7 @@ namespace CMS_Project.Services
             return true;
         }
 
-        public async Task<bool> DeleteFolderAsync(int id)
+        public async Task<bool> DeleteFolderAsync(int id, int userId)
         {
             var folder = await _context.Folders.FindAsync(id);
             if (folder == null)
@@ -84,10 +84,14 @@ namespace CMS_Project.Services
 
             // Sletter alle dokumenter i mappen eller håndter relasjonen på annen måte
             // Eksempel: Hvis du har satt opp Cascade Delete, vil tilknyttede dokumenter slettes automatisk
-            _context.Folders.Remove(folder);
-            await _context.SaveChangesAsync();
+            if (userId == folder.UserId)
+            {
+                _context.Folders.Remove(folder);
+                await _context.SaveChangesAsync();
 
-            return true;
+                return true;
+            }
+            return false;
         }
 
         private async Task<bool> FolderExists(int id)

@@ -11,6 +11,6 @@ namespace CMS_Project.Services
         Task<Folder> GetFolderByIdAsync(int id);
         Task<Folder> CreateFolderAsync(FolderDto folderDto);
         Task<bool> UpdateFolderAsync(int id, UpdateFolderDto updateFolderDto);
-        Task<bool> DeleteFolderAsync(int id);
+        Task<bool> DeleteFolderAsync(int id, int userId);
     }
 }
