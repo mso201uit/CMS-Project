@@ -51,19 +51,51 @@ namespace CMS_Project.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult> GetDocument(int id)
         {
-            var document = await _documentService.GetDocumentByIdAsync(id);
-            if (document == null)
-                return NotFound();
-
-            return Ok(document);
+            //Get NameIdentifier from claims from user to get username, which then service gets userId to find folder user owns.
+            var claimsIdentity = (ClaimsIdentity)User.Identity;
+            var claims = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
+            var userId = await _userService.GetUserIdAsync(claims.Value);
+            if (userId == -1)
+            {
+                return StatusCode(500, "UserId not found. User might not exist.");
+            }
+            try
+            {
+                //get document according to id
+                var document = await _documentService.GetDocumentByIdAsync(id);
+                //check if the user owns the document (could put this check inside the service)
+                if (document.UserId == userId)
+                {
+                    return Ok(document);
+                }
+                else
+                {
+                    return BadRequest();
+                }
+                
+            }
+            catch(Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         // POST: api/Document
         [HttpPost]
         public async Task<IActionResult> CreateDocument([FromBody] DocumentDto documentDto)
         {
+            //ModelState check
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
+
+            //Get NameIdentifier from claims from user to get username, which then service gets userId to find folder user owns.
+            var claimsIdentity = (ClaimsIdentity)User.Identity;
+            var claims = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
+            var userId = await _userService.GetUserIdAsync(claims.Value);
+            if (userId == -1)
+            {
+                return StatusCode(500, "UserId not found. User might not exist.");
+            }
 
             try
             {
@@ -87,11 +119,13 @@ namespace CMS_Project.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            // Hent brukerens ID fra claims
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            //Get NameIdentifier from claims from user to get username, which then service gets userId to find folder user owns.
+            var claimsIdentity = (ClaimsIdentity)User.Identity;
+            var claims = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
+            var userId = await _userService.GetUserIdAsync(claims.Value);
+            if (userId == -1)
             {
-                return Unauthorized("Bruker er ikke autentisert.");
+                return StatusCode(500, "UserId not found. User might not exist.");
             }
 
             try
