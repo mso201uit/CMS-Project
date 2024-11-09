@@ -1,12 +1,13 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace CMS_Project.Models.DTOs
 {
-    public class DocumentDto
+    public class DocumentCreateDto
     {
         [Required]
-        public int DocumentId { get; set; }
-        
+        public int FolderId { get; set; }
+
         [Required]
         [MaxLength(100)]
         public string Title { get; set; } = string.Empty;
@@ -16,7 +17,5 @@ namespace CMS_Project.Models.DTOs
 
         [Required]
         public string ContentType { get; set; } = string.Empty;
-        
-        public DateTime CreatedDate { get; set; }
     }
 }

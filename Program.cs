@@ -34,27 +34,32 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    // Legg til JWT Authentication til Swagger
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "CMS API", Version = "v1" });
+    
+    // Register custom filter
+    c.DocumentFilter<CustomDocumentOrderFilter>();
+
+    // JWT Authentication setup (if required)
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = @"JWT Authorization header using the Bearer scheme. 
-                          Enter 'Bearer' [space] and then your token in the text input below.
-                          Example: 'Bearer 12345abcdef'",
+                      Enter 'Bearer' [space] and then your token in the text input below.
+                      Example: 'Bearer 12345abcdef'",
         Name = "Authorization",
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
     });
 
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement()
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
             new OpenApiSecurityScheme
             {
-                Reference = new OpenApiReference 
-                { 
+                Reference = new OpenApiReference
+                {
                     Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer" 
+                    Id = "Bearer"
                 },
                 Scheme = "oauth2",
                 Name = "Bearer",
@@ -64,7 +69,6 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
-
 // Konfigurer Authentication
 var jwtKey = builder.Configuration["Jwt:Key"];
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];

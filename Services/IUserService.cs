@@ -1,4 +1,4 @@
-﻿using CMS_Project.Models;
+﻿using CMS_Project.Models.Entities;
 using CMS_Project.Models.DTOs;
 using System.Security.Claims;
 

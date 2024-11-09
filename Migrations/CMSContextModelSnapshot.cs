@@ -58,8 +58,7 @@ namespace CMS_Project.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("FolderId")
-                        .IsRequired()
+                    b.Property<int>("FolderId")
                         .HasColumnType("int");
 
                     b.Property<string>("Title")

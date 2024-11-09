@@ -1,22 +1,16 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
 
 namespace CMS_Project.Models.DTOs
 {
-    public class DocumentDto
+    public class DocumentDetailDto
     {
-        [Required]
         public int DocumentId { get; set; }
-        
-        [Required]
-        [MaxLength(100)]
         public string Title { get; set; } = string.Empty;
-
-        [Required]
         public string Content { get; set; } = string.Empty;
-
-        [Required]
         public string ContentType { get; set; } = string.Empty;
-        
         public DateTime CreatedDate { get; set; }
+        public int FolderId { get; set; }
+
+        public FolderDto Folder { get; set; } = null!;
     }
 }

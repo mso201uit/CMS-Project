@@ -1,4 +1,4 @@
-﻿using CMS_Project.Models;
+﻿using CMS_Project.Models.Entities;
 using CMS_Project.Models.DTOs;
 
 namespace CMS_Project.Services
@@ -7,11 +7,8 @@ namespace CMS_Project.Services
     {
         Task CreateFolderAsync(Folder folder);
         Task<List<FolderDto>> GetAllFoldersAsDtoAsync(int userId);
-        Task<Folder> GetFolderByIdAsync(int id);
-        //Task<IEnumerable<Folder>> GetAllFoldersAsync(int UserId);
+        Task<FolderDetailDto> GetFolderByIdAsync(int folderId, int userId);
         Task<bool> UpdateFolderAsync(int id, UpdateFolderDto updateFolderDto, int userId);
         Task<bool> DeleteFolderAsync(int id, int userId);
-        Task<IEnumerable<Folder>> GetFoldersByUserIdAsync(int userId);
-
     }
 }

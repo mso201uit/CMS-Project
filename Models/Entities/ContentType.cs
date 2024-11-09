@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace CMS_Project.Models
+namespace CMS_Project.Models.Entities
 {
     public class ContentType
     {

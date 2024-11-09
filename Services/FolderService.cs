@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using CMS_Project.Data;
-using CMS_Project.Models;
+using CMS_Project.Models.Entities;
 using CMS_Project.Models.DTOs;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,10 +18,10 @@ namespace CMS_Project.Services
         }
 
         /// <summary>
-        /// GET folder by id given
+        /// Retrieves a folder by its ID, including documents and child folders.
         /// </summary>
-        /// <param name="id"></param>
-        /// <returns>folder by id given</returns>
+        /// <param name="id">The ID of the folder to retrieve.</param>
+        /// <returns>The folder if found; null otherwise.</returns>
         public async Task<Folder> GetFolderByIdAsync(int id)
         {
             return await _context.Folders
@@ -58,6 +58,29 @@ namespace CMS_Project.Services
         }
         
         /// <summary>
+        /// Retrieves a folder by ID for a specific user with detailed information.
+        /// </summary>
+        /// <param name="folderId">The ID of the folder to retrieve.</param>
+        /// <param name="userId">The ID of the user who owns the folder.</param>
+        /// <returns>A FolderDetailDto containing detailed folder information.</returns>
+        /// <exception cref="KeyNotFoundException">Thrown if the folder is not found or does not belong to the user.</exception>
+        public async Task<FolderDetailDto> GetFolderByIdAsync(int folderId, int userId)
+        {
+            var folder = await _context.Folders
+                .Include(f => f.ChildrenFolders)
+                .Include(f => f.Documents)
+                .FirstOrDefaultAsync(f => f.Id == folderId && f.UserId == userId);
+
+            if (folder == null)
+            {
+                throw new KeyNotFoundException("Folder not found or does not belong to the user.");
+            }
+
+            var folderDetailDto = MapToFolderDetailDto(folder);
+            return folderDetailDto;
+        }
+        
+        /// <summary>
         /// GET all folders where UserId = Documents-User.Id
         /// </summary>
         /// <param name="UserId"></param>
@@ -73,18 +96,6 @@ namespace CMS_Project.Services
             return folderDtos;
         }
         
-        private FolderDto MapToFolderDto(Folder folder)
-        {
-            return new FolderDto
-            {
-                Id = folder.Id,
-                Name = folder.Name,
-                CreatedDate = folder.CreatedDate,
-                ParentFolderId = folder.ParentFolderId,
-                ChildrenFolders = folder.ChildrenFolders?.Select(MapToFolderDto).ToList() ?? new List<FolderDto>()
-            };
-        }
-        
         /// <summary>
         /// CREATE folder by Dto and checks ownership. First folder needs parentFolderId to be null!!
         /// </summary>
@@ -94,41 +105,38 @@ namespace CMS_Project.Services
         /// <exception cref="ArgumentException"></exception>
         public async Task CreateFolderAsync(Folder folder)
         {
-            // Valider at ParentFolderId (hvis angitt) tilhører samme bruker
             if (folder.ParentFolderId.HasValue)
             {
                 var parentFolder = await _context.Folders
-                .FirstOrDefaultAsync(f => f.Id == folder.ParentFolderId && f.UserId == folder.UserId);
+                    .FirstOrDefaultAsync(f => f.Id == folder.ParentFolderId && f.UserId == folder.UserId);
                 
                 if (parentFolder == null)
                 {
-                    throw new ArgumentException("Overordnet mappe ble ikke funnet eller tilhører ikke brukeren.");
+                    throw new ArgumentException("Parent folder not found or does not belong to the user.");
                 }
             }
             _context.Folders.Add(folder);
             await _context.SaveChangesAsync();
         }
         
-
+        
         /// <summary>
-        /// UPDATE folder by given id and checks ownership. Updates by dto
+        /// Updates a folder by its ID for a specific user.
         /// </summary>
-        /// <param name="id"></param>
-        /// <param name="updateFolderDto"></param>
-        /// <param name="userId"></param>
-        /// <returns>true if completed, false if not</returns>
-        /// <exception cref="ArgumentException"></exception>
+        /// <param name="id">The ID of the folder to update.</param>
+        /// <param name="updateFolderDto">Data for updating the folder.</param>
+        /// <param name="userId">The ID of the user who owns the folder.</param>
+        /// <returns>True if the update is successful; false otherwise.</returns>
+        /// <exception cref="ArgumentException">Thrown if the folder or parent folder does not belong to the user.</exception>
         public async Task<bool> UpdateFolderAsync(int id, UpdateFolderDto updateFolderDto, int userId)
         {
-            //check if folder exists
             var folder = await _context.Folders.FindAsync(id);
             if (folder == null)
                 throw new ArgumentException("folder not found.");
-            //check if user owns folder.
+            
             if (folder.UserId != userId)
                 throw new ArgumentException("User doesn't own folder.");
 
-            //if parentfolder exists:
             if (updateFolderDto.ParentFolderId != null)
             {
                 //check if user owns parent folder.
@@ -161,13 +169,13 @@ namespace CMS_Project.Services
 
             return true;
         }
-
+        
         /// <summary>
-        /// DELETE folder by given id and checks ownership
+        /// Deletes a folder by its ID for a specific user, including all child folders and documents.
         /// </summary>
-        /// <param name="id"></param>
-        /// <param name="userId"></param>
-        /// <returns>true when deleted and false if failed</returns>
+        /// <param name="id">The ID of the folder to delete.</param>
+        /// <param name="userId">The ID of the user who owns the folder.</param>
+        /// <returns>True if deletion is successful; false otherwise.</returns>
         public async Task<bool> DeleteFolderAsync(int id, int userId)
         {
             var folder = await _context.Folders
@@ -182,35 +190,82 @@ namespace CMS_Project.Services
 
             // Slett alle undermapper og dokumenter rekursivt
             DeleteFolderRecursive(folder);
-
             await _context.SaveChangesAsync();
             return true;
         }
+
+        // Helper Methods
         
+        /// <summary>
+        /// Recursively deletes a folder and all its child folders and documents.
+        /// </summary>
+        /// <param name="folder">The folder to delete recursively.</param>
         private void DeleteFolderRecursive(Folder folder)
         {
-            // Slett alle dokumenter i mappen
+            // Delete all documents in folder
             _context.Documents.RemoveRange(folder.Documents);
-
-            // Hent undermapper
+            
             foreach (var childFolder in folder.ChildrenFolders)
             {
-                // Rekursivt slett undermapper
+                // Rekursiv deletion
                 DeleteFolderRecursive(childFolder);
             }
-
-            // Slett mappen
+            
             _context.Folders.Remove(folder);
         }
-
+        
         /// <summary>
-        /// checks if folder with id exists
+        /// Checks if a folder with the specified ID exists.
         /// </summary>
-        /// <param name="id"></param>
-        /// <returns>true if exists, and false if not</returns>
+        /// <param name="id">The ID of the folder to check.</param>
+        /// <returns>True if the folder exists; false otherwise.</returns>
         private async Task<bool> FolderExists(int id)
         {
             return await _context.Folders.AnyAsync(f => f.Id == id);
         }
+        
+        /// <summary>
+        /// Maps a Folder entity to a FolderDetailDto.
+        /// </summary>
+        /// <param name="folder">The folder to map.</param>
+        /// <returns>A FolderDetailDto containing detailed folder information.</returns>
+        private FolderDetailDto MapToFolderDetailDto(Folder folder)
+        {
+            return new FolderDetailDto
+            {
+                FolderId = folder.Id,
+                Name = folder.Name,
+                CreatedDate = folder.CreatedDate,
+                ParentFolderId = folder.ParentFolderId,
+                Documents = folder.Documents.Select(d => new DocumentDto
+                {
+                    DocumentId = d.Id,
+                    Title = d.Title,
+                    Content = d.Content,
+                    ContentType = d.ContentType,
+                    CreatedDate = d.CreatedDate
+                }).ToList(),
+                ChildrenFolders = folder.ChildrenFolders.Select(MapToFolderDto).ToList()
+            };
+        }
+        
+        
+        /// <summary>
+        /// Maps a Folder entity to a FolderDto.
+        /// </summary>
+        /// <param name="folder">The folder to map.</param>
+        /// <returns>A FolderDto object.</returns>
+        private FolderDto MapToFolderDto(Folder folder)
+        {
+            return new FolderDto
+            {
+                FolderId = folder.Id,
+                Name = folder.Name,
+                CreatedDate = folder.CreatedDate,
+                ParentFolderId = folder.ParentFolderId,
+                ChildrenFolders = folder.ChildrenFolders?.Select(MapToFolderDto).ToList() ?? new List<FolderDto>()
+            };
+        }
+        
     }
 }

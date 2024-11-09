@@ -1,4 +1,4 @@
-﻿using CMS_Project.Models;
+﻿using CMS_Project.Models.Entities;
 using CMS_Project.Models.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using CMS_Project.Services;
@@ -17,7 +17,6 @@ namespace CMS_Project.Controllers
         private readonly ILogger<FolderController> _logger;
         private readonly IUserService _userService;
 
-
         public FolderController(IFolderService folderService, ILogger<FolderController> logger, IUserService userService)
         {
             _folderService = folderService;
@@ -25,83 +24,7 @@ namespace CMS_Project.Controllers
             _logger = logger;
             
         }
-
-        // GET: api/Folder/all
-        [HttpGet("all")]
-        public async Task<IActionResult> GetFolders()
-        {
-            // Get NameIdentifier from claims to find user ID
-            var userId = await _userService.GetUserIdFromClaimsAsync(User);
-            
-            // Mappe entitiene til DTO-er
-            var folderDtos = await _folderService.GetAllFoldersAsDtoAsync(userId);
-            
-            // Hent brukerinformasjon fra tjenesten
-            var user = await _userService.GetUserByIdAsync(userId);
-            
-            var response = new
-            {
-                User = new
-                {
-                    userId = user.Id,
-                    user.Username,
-                    user.Email,
-                    user.CreatedDate
-                },
-                Folders = folderDtos
-            };
-
-            return Ok(response);
-        }
         
-        // Rekursiv mapping til FolderDto
-        private FolderDto MapToFolderDto(Folder folder)
-        {
-            return new FolderDto
-            {
-                Id = folder.Id,
-                Name = folder.Name,
-                CreatedDate = folder.CreatedDate,
-                ParentFolderId = folder.ParentFolderId,
-                ChildrenFolders = folder.ChildrenFolders.Select(MapToFolderDto).ToList() ?? new List<FolderDto>()
-            };
-        }
-
-        // GET: api/Folder/details/{id}
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetFolder(int id)
-        {
-            //Get NameIdentifier from claims from user to get username, which then service gets userId to find folder user owns.
-            var claimsIdentity = (ClaimsIdentity)User.Identity;
-            var claims = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
-            var userId = await _userService.GetUserIdAsync(claims.Value);
-            if (userId == -1)
-            {
-                return StatusCode(500, "UserId not found. User might not exist.");
-            }
-
-            try
-            {
-                var folder = await _folderService.GetFolderByIdAsync(id);
-                if (folder == null)
-                {
-                    _logger.LogWarning($"Folder with ID {id} was not found.");
-                    return NotFound(new { message = $"Folder with ID {id} was not found." });
-                }
-                if (folder.UserId == userId)
-                {
-                    return Ok(folder);
-                }
-
-                return StatusCode(500, "User doesn't own this folder.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning($"Folder with ID {id} was not found.");
-                return NotFound(new { message = $"Folder with ID  {id} was not found." });
-            }
-        }
-
         // POST: api/Folder/create-folder
         [HttpPost("create-folder")]
         public async Task<IActionResult> CreateFolder([FromBody] FolderCreateDto  folderCreateDto)
@@ -145,10 +68,74 @@ namespace CMS_Project.Controllers
                 return StatusCode(500, "Unexpected error occured.");
             }
         }
-        
-        
 
-        // PUT: api/Folder/5
+
+        // GET: api/Folder/all
+        [HttpGet("all")]
+        public async Task<IActionResult> GetFolders()
+        {
+            // Get NameIdentifier from claims to find user ID
+            var userId = await _userService.GetUserIdFromClaimsAsync(User);
+            
+            // Mappe entitiene til DTO-er
+            var folderDtos = await _folderService.GetAllFoldersAsDtoAsync(userId);
+            
+            // Hent brukerinformasjon fra tjenesten
+            var user = await _userService.GetUserByIdAsync(userId);
+            
+            var response = new
+            {
+                User = new
+                {
+                    userId = user.Id,
+                    user.Username,
+                    user.Email,
+                    user.CreatedDate
+                },
+                Folders = folderDtos
+            };
+
+            return Ok(response);
+        }
+        
+        // Rekursiv mapping til FolderDto
+        private FolderDto MapToFolderDto(Folder folder)
+        {
+            return new FolderDto
+            {
+                FolderId = folder.Id,
+                Name = folder.Name,
+                CreatedDate = folder.CreatedDate,
+                ParentFolderId = folder.ParentFolderId,
+                ChildrenFolders = folder.ChildrenFolders.Select(MapToFolderDto).ToList() ?? new List<FolderDto>()
+            };
+        }
+
+        // GET: api/Folder/details/{id}
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetFolder(int id)
+        {
+            try
+            {
+                var userId = await _userService.GetUserIdFromClaimsAsync(User);
+                var folderDetailDto = await _folderService.GetFolderByIdAsync(id, userId);
+                
+                return Ok(folderDetailDto);
+
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(ex.Message);
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"An error occurred while retrieving folder with ID {id}.");
+                return StatusCode(500, "An unexpected error occurred.");
+            }
+        }
+        
+        // PUT: api/Folder/{id}
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateFolder(int id, [FromBody] UpdateFolderDto updateFolderDto)
         {
@@ -158,7 +145,7 @@ namespace CMS_Project.Controllers
                 _logger.LogWarning($"Attempted to update folder with ID {id} with invalid data.");
                 return BadRequest(ModelState);
             }
-            //Get NameIdentifier from claims from user to get username, which then service gets userId to find folder user owns.
+            // Get user ID from claims
             var claimsIdentity = (ClaimsIdentity)User.Identity;
             var claims = claimsIdentity.FindFirst(ClaimTypes.NameIdentifier);
             var userId = await _userService.GetUserIdAsync(claims.Value);
@@ -190,11 +177,11 @@ namespace CMS_Project.Controllers
             }
         }
 
-        // DELETE: api/Folder/5
+        // DELETE: api/Folder/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteFolder(int id)
         {
-            // Get NameIdentifier from claims to find user ID
+            // Get user ID from claims
             var userId = await _userService.GetUserIdFromClaimsAsync(User);
             
             if (userId == -1)

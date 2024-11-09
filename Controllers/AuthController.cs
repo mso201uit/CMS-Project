@@ -28,7 +28,7 @@ namespace CMS_Project.Controllers
                     Username = registerDto.Username,
                     Password = registerDto.Password
                 });
-                return Ok(new { message = "Registrering vellykket.", token });
+                return Ok(new { message = "Registrering successful.", token });
             }
             catch (ArgumentException ex)
             {
@@ -36,7 +36,7 @@ namespace CMS_Project.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, "En uventet feil oppstod.");
+                return StatusCode(500, "En unexpected error occurred.");
             }
         }
         
@@ -50,7 +50,7 @@ namespace CMS_Project.Controllers
             try
             {
                 var token = await _userService.AuthenticateUserAsync(loginDto);
-                return Ok(new { message = "Innlogging vellykket.", token });
+                return Ok(new { message = "Login  successful.", token });
             }
             catch (UnauthorizedAccessException ex)
             {
@@ -58,8 +58,8 @@ namespace CMS_Project.Controllers
             }
             catch (Exception ex)
             {
-                // Logg feilen her hvis du har logging konfigurert
-                return StatusCode(500, "En uventet feil oppstod.");
+                // Log the error here if you have logging configured
+                return StatusCode(500, "En unexpected error occurred.");
             }
         }
     }

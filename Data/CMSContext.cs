@@ -1,4 +1,5 @@
 ﻿using CMS_Project.Models;
+using CMS_Project.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace CMS_Project.Data
@@ -22,20 +23,13 @@ namespace CMS_Project.Data
 
             // Konfigurer relasjoner og sletteatferd
             
-            // Document -> User (Restrict delete)
-            modelBuilder.Entity<Document>()
-                .HasOne(d => d.User)
-                .WithMany(u => u.Documents)
-                .HasForeignKey(d => d.UserId)
+            // Folder -> User (Restrict delete)
+            modelBuilder.Entity<Folder>()
+                .HasOne(f => f.User)
+                .WithMany(u => u.Folders)
+                .HasForeignKey(f => f.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
             
-            // Document -> Folder (Cascade delete)
-            modelBuilder.Entity<Document>()
-                .HasOne(d => d.Folder)
-                .WithMany(f => f.Documents)
-                .HasForeignKey(d => d.FolderId)
-                .OnDelete(DeleteBehavior.Restrict);
-
             // Folder -> ParentFolder (Cascade delete)
             modelBuilder.Entity<Folder>()
                 .HasMany(f => f.ChildrenFolders)
@@ -43,12 +37,20 @@ namespace CMS_Project.Data
                 .HasForeignKey(f => f.ParentFolderId)
                 .OnDelete(DeleteBehavior.Restrict);
             
-            // Folder -> User (Restrict delete)
-            modelBuilder.Entity<Folder>()
-                .HasOne(f => f.User)
-                .WithMany(u => u.Folders)
-                .HasForeignKey(f => f.UserId)
+            // Document -> User (Restrict delete)
+            modelBuilder.Entity<Document>()
+                .HasOne(d => d.User)
+                .WithMany(u => u.Documents)
+                .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
+            
+            // Document -> Folder (Restrict delete)
+            modelBuilder.Entity<Document>()
+                .HasOne(d => d.Folder)
+                .WithMany(f => f.Documents)
+                .HasForeignKey(d => d.FolderId)
+                .OnDelete(DeleteBehavior.Restrict);
+            
         }
     }
 }
