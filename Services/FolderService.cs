@@ -1,32 +1,20 @@
-﻿using CMS_Project.Data;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using CMS_Project.Data;
 using CMS_Project.Models;
 using CMS_Project.Models.DTOs;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace CMS_Project.Services
 {
     public class FolderService : IFolderService
     {
         private readonly CMSContext _context;
+        private IFolderService _folderServiceImplementation;
 
         public FolderService(CMSContext context)
         {
             _context = context;
-        }
-
-        /// <summary>
-        /// GET all folders where UserId = Documents-User.Id
-        /// </summary>
-        /// <param name="UserId"></param>
-        /// <returns>List of folders by given user id</returns>
-        public async Task<IEnumerable<Folder>> GetAllFoldersAsync(int UserId)
-        {
-            return await _context.Folders
-                .Include(f => f.Documents)
-                .Include(f => f.User)
-                .Where(f => f.UserId == UserId)
-                .ToListAsync();
         }
 
         /// <summary>
@@ -38,9 +26,65 @@ namespace CMS_Project.Services
         {
             return await _context.Folders
                 .Include(f => f.Documents)
+                .Include(f => f.ChildrenFolders)
                 .FirstOrDefaultAsync(f => f.Id == id);
         }
 
+        /// <summary>
+        /// Gets all folders for a specific user.
+        /// </summary>
+        /// <param name="userId">The ID of the user whose folders are to be retrieved.</param>
+        /// <returns>A list of folders belonging to the specified user.</returns>
+        public async Task<IEnumerable<Folder>> GetAllFoldersAsync(int userId)
+        {
+            return await _context.Folders
+                .Include(f => f.Documents)
+                .Include(f => f.User)
+                .Where(f => f.UserId == userId)
+                .ToListAsync();
+        }
+        
+        /// <summary>
+        /// Retrieves all top-level folders (those without a parent folder) for a specific user.
+        /// </summary>
+        /// <param name="userId">The ID of the user whose top-level folders are to be retrieved.</param>
+        /// <returns>A list of top-level folders belonging to the specified user, including their child folders.</returns>
+        public async Task<IEnumerable<Folder>> GetFoldersByUserIdAsync(int userId)
+        {
+            return await _context.Folders
+                .Where(f => f.UserId == userId && f.ParentFolderId == null)
+                .Include(f => f.ChildrenFolders)
+                .ToListAsync();
+        }
+        
+        /// <summary>
+        /// GET all folders where UserId = Documents-User.Id
+        /// </summary>
+        /// <param name="UserId"></param>
+        /// <returns>List of folders by given user id</returns>
+        public async Task<List<FolderDto>> GetAllFoldersAsDtoAsync(int userId)
+        {
+            var rootFolders = await _context.Folders
+                .Where(f => f.UserId == userId && f.ParentFolderId == null)
+                .Include(f => f.ChildrenFolders)
+                .ToListAsync();
+
+            var folderDtos = rootFolders.Select(MapToFolderDto).ToList();
+            return folderDtos;
+        }
+        
+        private FolderDto MapToFolderDto(Folder folder)
+        {
+            return new FolderDto
+            {
+                Id = folder.Id,
+                Name = folder.Name,
+                CreatedDate = folder.CreatedDate,
+                ParentFolderId = folder.ParentFolderId,
+                ChildrenFolders = folder.ChildrenFolders?.Select(MapToFolderDto).ToList() ?? new List<FolderDto>()
+            };
+        }
+        
         /// <summary>
         /// CREATE folder by Dto and checks ownership. First folder needs parentFolderId to be null!!
         /// </summary>
@@ -48,32 +92,23 @@ namespace CMS_Project.Services
         /// <param name="userId"></param>
         /// <returns>document created</returns>
         /// <exception cref="ArgumentException"></exception>
-        public async Task<Folder> CreateFolderAsync(FolderDto folderDto, int userId)
+        public async Task CreateFolderAsync(Folder folder)
         {
-            var folder = new Folder
+            // Valider at ParentFolderId (hvis angitt) tilhører samme bruker
+            if (folder.ParentFolderId.HasValue)
             {
-                Name = folderDto.Name,
-                UserId = userId,
-                ParentFolderId = folderDto.ParentFolderId,
-                CreatedDate = DateTime.UtcNow
-            };
-
-            //Check if user owns parent folder:
-            if (folder.ParentFolderId != null)
-            {
-                var parentfolder = await _context.Folders.FirstOrDefaultAsync(f => f.Id == folderDto.ParentFolderId);
-                if(parentfolder != null)
+                var parentFolder = await _context.Folders
+                .FirstOrDefaultAsync(f => f.Id == folder.ParentFolderId && f.UserId == folder.UserId);
+                
+                if (parentFolder == null)
                 {
-                    if (folder.UserId != parentfolder.UserId)
-                        throw new ArgumentException("User doesn't own parent folder.");
+                    throw new ArgumentException("Overordnet mappe ble ikke funnet eller tilhører ikke brukeren.");
                 }
             }
-
             _context.Folders.Add(folder);
             await _context.SaveChangesAsync();
-
-            return folder;
         }
+        
 
         /// <summary>
         /// UPDATE folder by given id and checks ownership. Updates by dto
@@ -135,20 +170,37 @@ namespace CMS_Project.Services
         /// <returns>true when deleted and false if failed</returns>
         public async Task<bool> DeleteFolderAsync(int id, int userId)
         {
-            var folder = await _context.Folders.FindAsync(id);
+            var folder = await _context.Folders
+                .Include(f => f.ChildrenFolders)
+                .Include(f => f.Documents)
+                .FirstOrDefaultAsync(f => f.Id == id && f.UserId == userId);
+            
             if (folder == null)
-                return false;
-
-            // Sletter alle dokumenter i mappen eller håndter relasjonen på annen måte
-            // Eksempel: Hvis du har satt opp Cascade Delete, vil tilknyttede dokumenter slettes automatisk
-            if (userId == folder.UserId)
             {
-                _context.Folders.Remove(folder);
-                await _context.SaveChangesAsync();
-
-                return true;
+                return false;
             }
-            return false;
+
+            // Slett alle undermapper og dokumenter rekursivt
+            DeleteFolderRecursive(folder);
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+        
+        private void DeleteFolderRecursive(Folder folder)
+        {
+            // Slett alle dokumenter i mappen
+            _context.Documents.RemoveRange(folder.Documents);
+
+            // Hent undermapper
+            foreach (var childFolder in folder.ChildrenFolders)
+            {
+                // Rekursivt slett undermapper
+                DeleteFolderRecursive(childFolder);
+            }
+
+            // Slett mappen
+            _context.Folders.Remove(folder);
         }
 
         /// <summary>

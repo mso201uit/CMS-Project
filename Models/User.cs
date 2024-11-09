@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace CMS_Project.Models
 {
@@ -19,6 +21,8 @@ namespace CMS_Project.Models
         public string Email { get; set; } = string.Empty;
         
         public DateTime CreatedDate { get; set; }
+        
+        public ICollection<Folder> Folders { get; set; } = new List<Folder>();
         
         public ICollection<Document> Documents { get; set; }  = new List<Document>();
         

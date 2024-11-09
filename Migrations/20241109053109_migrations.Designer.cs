@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CMS_Project.Migrations
 {
     [DbContext(typeof(CMSContext))]
-    [Migration("20241107065521_migrations")]
+    [Migration("20241109053109_migrations")]
     partial class migrations
     {
         /// <inheritdoc />
@@ -147,7 +147,7 @@ namespace CMS_Project.Migrations
                     b.HasOne("CMS_Project.Models.Folder", "Folder")
                         .WithMany("Documents")
                         .HasForeignKey("FolderId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("CMS_Project.Models.User", "User")
@@ -165,12 +165,13 @@ namespace CMS_Project.Migrations
                 {
                     b.HasOne("CMS_Project.Models.Folder", "ParentFolder")
                         .WithMany("ChildrenFolders")
-                        .HasForeignKey("ParentFolderId");
+                        .HasForeignKey("ParentFolderId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("CMS_Project.Models.User", "User")
-                        .WithMany()
+                        .WithMany("Folders")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("ParentFolder");
@@ -188,6 +189,8 @@ namespace CMS_Project.Migrations
             modelBuilder.Entity("CMS_Project.Models.User", b =>
                 {
                     b.Navigation("Documents");
+
+                    b.Navigation("Folders");
                 });
 #pragma warning restore 612, 618
         }

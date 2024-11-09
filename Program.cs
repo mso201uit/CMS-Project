@@ -15,8 +15,9 @@ builder.Services.AddDbContext<CMSContext>(options =>
 
 // Registrer tjenester
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IDocumentService, DocumentService>();
 builder.Services.AddScoped<IFolderService, FolderService>();
+builder.Services.AddScoped<IDocumentService, DocumentService>();
+
 
 
 builder.Logging.ClearProviders();

@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.SignalR;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
@@ -22,6 +21,7 @@ namespace CMS_Project.Models
 
         public int UserId { get; set; }
         public User User { get; set; } = null!;
+        
         public ICollection<Document> Documents { get; set; } = new List<Document>();
         public ICollection<Folder> ChildrenFolders { get; set; } = new List<Folder>();
     }

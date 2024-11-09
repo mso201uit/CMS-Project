@@ -21,25 +21,34 @@ namespace CMS_Project.Data
             base.OnModelCreating(modelBuilder);
 
             // Konfigurer relasjoner og sletteatferd
+            
+            // Document -> User (Restrict delete)
             modelBuilder.Entity<Document>()
                 .HasOne(d => d.User)
                 .WithMany(u => u.Documents)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
             
+            // Document -> Folder (Cascade delete)
             modelBuilder.Entity<Document>()
                 .HasOne(d => d.Folder)
                 .WithMany(f => f.Documents)
                 .HasForeignKey(d => d.FolderId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
-            /** Cascade fix?
+            // Folder -> ParentFolder (Cascade delete)
             modelBuilder.Entity<Folder>()
-                .HasOne(d => d.ParentFolder)
-                .WithMany(d =>d.ChildrenFolders)
-                .HasForeignKey(d => d.ParentFolderId)
-                .OnDelete(DeleteBehavior.Cascade);
-            */
+                .HasMany(f => f.ChildrenFolders)
+                .WithOne(f => f.ParentFolder)
+                .HasForeignKey(f => f.ParentFolderId)
+                .OnDelete(DeleteBehavior.Restrict);
+            
+            // Folder -> User (Restrict delete)
+            modelBuilder.Entity<Folder>()
+                .HasOne(f => f.User)
+                .WithMany(u => u.Folders)
+                .HasForeignKey(f => f.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }
