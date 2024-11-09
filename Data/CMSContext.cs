@@ -29,21 +29,21 @@ namespace CMS_Project.Data
                 .WithMany(u => u.Folders)
                 .HasForeignKey(f => f.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
-            
-            // Folder -> ParentFolder (Cascade delete)
+    
+            // Folder -> ParentFolder (Restrict delete) to prevent cyclic paths
             modelBuilder.Entity<Folder>()
                 .HasMany(f => f.ChildrenFolders)
                 .WithOne(f => f.ParentFolder)
                 .HasForeignKey(f => f.ParentFolderId)
                 .OnDelete(DeleteBehavior.Restrict);
-            
+
             // Document -> User (Restrict delete)
             modelBuilder.Entity<Document>()
                 .HasOne(d => d.User)
                 .WithMany(u => u.Documents)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
-            
+
             // Document -> Folder (Restrict delete)
             modelBuilder.Entity<Document>()
                 .HasOne(d => d.Folder)

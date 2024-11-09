@@ -183,7 +183,7 @@ namespace CMS_Project.Controllers
         {
             // Get user ID from claims
             var userId = await _userService.GetUserIdFromClaimsAsync(User);
-            
+    
             if (userId == -1)
             {
                 return StatusCode(500, "UserId not found. User might not exist.");
@@ -205,7 +205,7 @@ namespace CMS_Project.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"An error occurred while deleting folder with ID {id}.");
-                return StatusCode(500, "An unexpected error occurred.");
+                return StatusCode(500, $"An unexpected error occurred: {ex.Message}");
             }
         }
     }

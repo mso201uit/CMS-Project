@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CMS_Project.Migrations
 {
     [DbContext(typeof(CMSContext))]
-    [Migration("20241109154905_migrations")]
+    [Migration("20241109211614_migrations")]
     partial class migrations
     {
         /// <inheritdoc />
@@ -25,7 +25,7 @@ namespace CMS_Project.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("CMS_Project.Models.ContentType", b =>
+            modelBuilder.Entity("CMS_Project.Models.Entities.ContentType", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -42,7 +42,7 @@ namespace CMS_Project.Migrations
                     b.ToTable("ContentTypes");
                 });
 
-            modelBuilder.Entity("CMS_Project.Models.Document", b =>
+            modelBuilder.Entity("CMS_Project.Models.Entities.Document", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -81,7 +81,7 @@ namespace CMS_Project.Migrations
                     b.ToTable("Documents");
                 });
 
-            modelBuilder.Entity("CMS_Project.Models.Folder", b =>
+            modelBuilder.Entity("CMS_Project.Models.Entities.Folder", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -112,7 +112,7 @@ namespace CMS_Project.Migrations
                     b.ToTable("Folders");
                 });
 
-            modelBuilder.Entity("CMS_Project.Models.User", b =>
+            modelBuilder.Entity("CMS_Project.Models.Entities.User", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -141,15 +141,15 @@ namespace CMS_Project.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("CMS_Project.Models.Document", b =>
+            modelBuilder.Entity("CMS_Project.Models.Entities.Document", b =>
                 {
-                    b.HasOne("CMS_Project.Models.Folder", "Folder")
+                    b.HasOne("CMS_Project.Models.Entities.Folder", "Folder")
                         .WithMany("Documents")
                         .HasForeignKey("FolderId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("CMS_Project.Models.User", "User")
+                    b.HasOne("CMS_Project.Models.Entities.User", "User")
                         .WithMany("Documents")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -160,14 +160,14 @@ namespace CMS_Project.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("CMS_Project.Models.Folder", b =>
+            modelBuilder.Entity("CMS_Project.Models.Entities.Folder", b =>
                 {
-                    b.HasOne("CMS_Project.Models.Folder", "ParentFolder")
+                    b.HasOne("CMS_Project.Models.Entities.Folder", "ParentFolder")
                         .WithMany("ChildrenFolders")
                         .HasForeignKey("ParentFolderId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("CMS_Project.Models.User", "User")
+                    b.HasOne("CMS_Project.Models.Entities.User", "User")
                         .WithMany("Folders")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -178,14 +178,14 @@ namespace CMS_Project.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("CMS_Project.Models.Folder", b =>
+            modelBuilder.Entity("CMS_Project.Models.Entities.Folder", b =>
                 {
                     b.Navigation("ChildrenFolders");
 
                     b.Navigation("Documents");
                 });
 
-            modelBuilder.Entity("CMS_Project.Models.User", b =>
+            modelBuilder.Entity("CMS_Project.Models.Entities.User", b =>
                 {
                     b.Navigation("Documents");
 

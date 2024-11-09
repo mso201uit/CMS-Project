@@ -10,11 +10,13 @@ namespace CMS_Project.Services
     public class FolderService : IFolderService
     {
         private readonly CMSContext _context;
+        private readonly ILogger<FolderService> _logger; 
         private IFolderService _folderServiceImplementation;
 
-        public FolderService(CMSContext context)
+        public FolderService(CMSContext context,  ILogger<FolderService> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         /// <summary>
@@ -89,11 +91,40 @@ namespace CMS_Project.Services
         {
             var rootFolders = await _context.Folders
                 .Where(f => f.UserId == userId && f.ParentFolderId == null)
-                .Include(f => f.ChildrenFolders)
                 .ToListAsync();
 
-            var folderDtos = rootFolders.Select(MapToFolderDto).ToList();
+            var folderDtos = rootFolders.Select(folder => MapToFolderDtoRecursively(folder)).ToList();
             return folderDtos;
+        }
+        
+        /// <summary>
+        /// Recursively maps a folder and its children to FolderDto.
+        /// </summary>
+        /// <param name="folder">The folder to map.</param>
+        /// <returns>A FolderDto representing the folder and its children.</returns>
+        private FolderDto MapToFolderDtoRecursively(Folder folder)
+        {
+            // Map basic properties of the folder
+            var folderDto = new FolderDto
+            {
+                FolderId = folder.Id,
+                Name = folder.Name,
+                CreatedDate = folder.CreatedDate,
+                ParentFolderId = folder.ParentFolderId,
+                ChildrenFolders = new List<FolderDto>()
+            };
+
+            // Retrieve children folders and map them recursively
+            var children = _context.Folders
+                .Where(f => f.ParentFolderId == folder.Id)
+                .ToList(); // Execute query here to avoid EF tracking issues in recursion
+
+            foreach (var child in children)
+            {
+                folderDto.ChildrenFolders.Add(MapToFolderDtoRecursively(child));
+            }
+
+            return folderDto;
         }
         
         /// <summary>
@@ -178,21 +209,32 @@ namespace CMS_Project.Services
         /// <returns>True if deletion is successful; false otherwise.</returns>
         public async Task<bool> DeleteFolderAsync(int id, int userId)
         {
-            var folder = await _context.Folders
-                .Include(f => f.ChildrenFolders)
-                .Include(f => f.Documents)
-                .FirstOrDefaultAsync(f => f.Id == id && f.UserId == userId);
-            
-            if (folder == null)
+            try
             {
-                return false;
-            }
+                var folder = await _context.Folders
+                    .Include(f => f.ChildrenFolders)
+                    .Include(f => f.Documents)
+                    .FirstOrDefaultAsync(f => f.Id == id && f.UserId == userId);
+        
+                if (folder == null)
+                {
+                    return false;
+                }
 
-            // Slett alle undermapper og dokumenter rekursivt
-            DeleteFolderRecursive(folder);
-            await _context.SaveChangesAsync();
-            return true;
+                // Delete all subfolders and documents recursively
+                DeleteFolderRecursive(folder);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (you can use your logger here)
+                _logger.LogError(ex, $"Error deleting folder with ID {id} for user {userId}");
+                throw; // Re-throw the exception to be handled by the controller
+            }
         }
+
+
 
         // Helper Methods
         
@@ -204,15 +246,22 @@ namespace CMS_Project.Services
         {
             // Delete all documents in folder
             _context.Documents.RemoveRange(folder.Documents);
-            
+    
+            // Recursively delete all child folders
             foreach (var childFolder in folder.ChildrenFolders)
             {
-                // Rekursiv deletion
+                // Load child folder's children and documents
+                _context.Entry(childFolder).Collection(f => f.ChildrenFolders).Load();
+                _context.Entry(childFolder).Collection(f => f.Documents).Load();
+        
+                // Recursive call
                 DeleteFolderRecursive(childFolder);
             }
-            
+    
+            // Delete the current folder
             _context.Folders.Remove(folder);
         }
+
         
         /// <summary>
         /// Checks if a folder with the specified ID exists.
