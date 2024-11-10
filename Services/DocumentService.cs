@@ -98,7 +98,7 @@ namespace CMS_Project.Services
         /// <exception cref="ArgumentException">Thrown if the folder does not exist or does not belong to the user.</exception>
         public async Task<DocumentResponseDto> CreateDocumentAsync(DocumentCreateDto documentCreateDto, int userId)
         {
-            int? folderId = documentCreateDto.DocumentId;
+            int? folderId = documentCreateDto.FolderId;
 
             // Optional check for FolderId: If null, assign a default or handle as necessary
             if (folderId.HasValue)
@@ -145,22 +145,30 @@ namespace CMS_Project.Services
         /// <exception cref="UnauthorizedAccessException">Thrown if the user does not own the document or folder.</exception>
         public async Task<bool> UpdateDocumentAsync(int id, UpdateDocumentDto updateDocumentDto, int userId)
         {
+            // Find the document
             var document = await _context.Documents.FindAsync(id);
             if (document == null)
                 return false;
 
+            // Check if the user owns the document
             if (document.UserId != userId)
                 throw new UnauthorizedAccessException("User doesn't have access to this document.");
 
-            var folder = await _context.Folders.FindAsync(updateDocumentDto.FolderId);
-            if (folder == null || folder.UserId != userId)
-                throw new UnauthorizedAccessException("User doesn't have access to this folder.");
+            // Only check folder ownership if a valid folderId is provided (greater than 0)
+            if (updateDocumentDto.FolderId > 0)
+            {
+                var folder = await _context.Folders.FindAsync(updateDocumentDto.FolderId);
+                if (folder == null || folder.UserId != userId)
+                    throw new UnauthorizedAccessException("User doesn't have access to this folder.");
+            }
 
+            // Update document properties
             document.Title = updateDocumentDto.Title;
             document.Content = updateDocumentDto.Content;
             document.ContentType = updateDocumentDto.ContentType;
-            document.FolderId = updateDocumentDto.FolderId;
+            document.FolderId = updateDocumentDto.FolderId > 0 ? updateDocumentDto.FolderId : null; // Set to null if folderId is 0
 
+            // Mark document as modified
             _context.Entry(document).State = EntityState.Modified;
 
             try
@@ -177,6 +185,7 @@ namespace CMS_Project.Services
 
             return true;
         }
+
         
         /// <summary>
         /// Deletes a document by its ID for a specified user.

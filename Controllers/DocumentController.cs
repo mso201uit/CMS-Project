@@ -49,9 +49,9 @@ namespace CMS_Project.Controllers
                 var userId = await _userService.GetUserIdFromClaimsAsync(User);
 
                 // Check if FolderId is provided and if the folder exists
-                if (documentCreateDto.DocumentId.HasValue)
+                if (documentCreateDto.FolderId.HasValue)
                 {
-                    var folder = await _folderService.GetFolderByIdAsync(documentCreateDto.DocumentId.Value, userId);
+                    var folder = await _folderService.GetFolderByIdAsync(documentCreateDto.FolderId.Value, userId);
                     if (folder == null)
                     {
                         return BadRequest(new { error = new { message = "Specified folder does not exist or does not belong to the user." } });
