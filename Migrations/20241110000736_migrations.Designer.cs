@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CMS_Project.Migrations
 {
     [DbContext(typeof(CMSContext))]
-    [Migration("20241109211614_migrations")]
+    [Migration("20241110000736_migrations")]
     partial class migrations
     {
         /// <inheritdoc />
@@ -61,7 +61,7 @@ namespace CMS_Project.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("FolderId")
+                    b.Property<int?>("FolderId")
                         .HasColumnType("int");
 
                     b.Property<string>("Title")
@@ -146,8 +146,7 @@ namespace CMS_Project.Migrations
                     b.HasOne("CMS_Project.Models.Entities.Folder", "Folder")
                         .WithMany("Documents")
                         .HasForeignKey("FolderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("CMS_Project.Models.Entities.User", "User")
                         .WithMany("Documents")

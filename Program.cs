@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using System.Text.Json.Serialization;
+using CMS_Project.Converters; 
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,7 +28,12 @@ builder.Logging.AddConsole();
 // Legg til kontrollerne med JSON-innstillinger for å håndtere referanseløkker
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
-        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.WriteIndented = true;
+        options.JsonSerializerOptions.Converters.Add(new CustomDateTimeConverter("yyyy-MM-dd"));
+    });
 
 
 // Konfigurer Swagger med JWT-støtte

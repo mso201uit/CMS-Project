@@ -26,9 +26,8 @@ namespace CMS_Project.Models.Entities
         public User User { get; set; } = null!;
         
         // Fremmednøkkel Folder
-        [Required]
-        public int FolderId { get; set; }
+        public int? FolderId { get; set; }
 
-        public Folder? Folder { get; set; } = null!;
+        public Folder? Folder { get; set; }
     }
 }

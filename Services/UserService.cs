@@ -145,5 +145,26 @@ namespace CMS_Project.Services
 
             return user;
         }
+
+        public async Task<UserDto?> GetUserDtoByIdAsync(int userId)
+        {
+            var user = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null)
+            {
+                return null;
+            }
+
+            return new UserDto
+            {
+                UserId = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                CreatedDate = user.CreatedDate
+            };
+        }
+
     }
 }

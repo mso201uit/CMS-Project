@@ -6,6 +6,7 @@ namespace CMS_Project.Services
 {
     public interface IUserService
     {
+        Task<UserDto?> GetUserDtoByIdAsync(int userId);
         Task<User> RegisterUserAsync(RegisterDto registerDto);
         Task<string> AuthenticateUserAsync(LoginDto loginDto);
         Task<int> GetUserIdAsync(string username);

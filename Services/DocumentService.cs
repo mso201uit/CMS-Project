@@ -23,6 +23,7 @@ namespace CMS_Project.Services
         {
             var documents = await _context.Documents
                 .Where(d => d.UserId == userId)
+                .AsNoTracking()
                 .Select(d => new DocumentDto
                 {
                     DocumentId = d.Id,
@@ -35,6 +36,7 @@ namespace CMS_Project.Services
 
             return documents;
         }
+
         
         /// <summary>
         /// Retrieves a document by its ID for a specified user, including its folder details.
@@ -53,15 +55,20 @@ namespace CMS_Project.Services
             {
                 throw new KeyNotFoundException("Document not found or does not belong to the user.");
             }
+    
+            FolderDto? folderDto = null;
             
-            var folderDto = new FolderDto
+            if (document.Folder != null)
             {
-                FolderId = document.Folder.Id,
-                Name = document.Folder.Name,
-                CreatedDate = document.Folder.CreatedDate,
-                ParentFolderId = document.Folder.ParentFolderId,
-                ChildrenFolders = new List<FolderDto>()
-            };
+                folderDto = new FolderDto
+                {
+                    FolderId = document.Folder.Id,
+                    Name = document.Folder.Name,
+                    CreatedDate = document.Folder.CreatedDate,
+                    ParentFolderId = document.Folder.ParentFolderId,
+                    ChildrenFolders = new List<FolderDto>()
+                };
+            }
 
             var documentDetailDto = new DocumentDetailDto
             {
@@ -70,16 +77,17 @@ namespace CMS_Project.Services
                 Content = document.Content,
                 ContentType = document.ContentType,
                 CreatedDate = document.CreatedDate,
-                FolderId = document.FolderId
+                FolderId = document.FolderId ?? 0
             };
             var responseDto = new DocumentResponseDto
             {
                 Folder = folderDto,
                 Document = documentDetailDto
             };
-            
+    
             return responseDto;
         }
+
         
         /// <summary>
         /// Creates a new document for a specified user and validates ownership of the folder.
@@ -90,11 +98,24 @@ namespace CMS_Project.Services
         /// <exception cref="ArgumentException">Thrown if the folder does not exist or does not belong to the user.</exception>
         public async Task<DocumentResponseDto> CreateDocumentAsync(DocumentCreateDto documentCreateDto, int userId)
         {
-            var folder = await _context.Folders
-                .FirstOrDefaultAsync(f => f.Id == documentCreateDto.FolderId && f.UserId == userId);
+            int? folderId = documentCreateDto.DocumentId;
 
-            if (folder == null)
-                throw new ArgumentException("Folder not found or does not belong to the user.");
+            // Optional check for FolderId: If null, assign a default or handle as necessary
+            if (folderId.HasValue)
+            {
+                var folder = await _context.Folders
+                    .FirstOrDefaultAsync(f => f.Id == folderId && f.UserId == userId);
+
+                if (folder == null)
+                {
+                    throw new ArgumentException("Folder not found or does not belong to the user.");
+                }
+            }
+            else
+            {
+                // Optional: Assign a default folder or handle the absence of a folder as needed.
+                folderId = null; // or some default folder ID if applicable
+            }
 
             var document = new Document
             {
@@ -103,7 +124,7 @@ namespace CMS_Project.Services
                 ContentType = documentCreateDto.ContentType,
                 CreatedDate = DateTime.UtcNow,
                 UserId = userId,
-                FolderId = documentCreateDto.FolderId
+                FolderId = folderId
             };
 
             _context.Documents.Add(document);
@@ -111,6 +132,8 @@ namespace CMS_Project.Services
 
             return await GetDocumentByIdAsync(document.Id, userId);
         }
+
+
         
         /// <summary>
         /// Updates a document by its ID for a specified user.

@@ -79,7 +79,7 @@ namespace CMS_Project.Migrations
                     ContentType = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UserId = table.Column<int>(type: "int", nullable: false),
-                    FolderId = table.Column<int>(type: "int", nullable: false)
+                    FolderId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {

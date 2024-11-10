@@ -2,7 +2,8 @@
 {
     public class DocumentResponseDto
     {
-        public FolderDto Folder { get; set; } = null!;
-        public DocumentDetailDto Document { get; set; } = null!;
+        public FolderDto? Folder { get; set; }
+        public DocumentDetailDto Document { get; set; } = new DocumentDetailDto();
     }
+    
 }

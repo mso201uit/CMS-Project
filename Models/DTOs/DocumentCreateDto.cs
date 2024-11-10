@@ -5,8 +5,7 @@ namespace CMS_Project.Models.DTOs
 {
     public class DocumentCreateDto
     {
-        [Required]
-        public int FolderId { get; set; }
+        public int? DocumentId { get; set; }
 
         [Required]
         [MaxLength(100)]

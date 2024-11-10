@@ -1,10 +1,10 @@
 ﻿using CMS_Project.Models.DTOs;
+using CMS_Project.Models.Entities;
 using CMS_Project.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-
 namespace CMS_Project.Controllers
 {
     [ApiController]
@@ -14,13 +14,20 @@ namespace CMS_Project.Controllers
     {
         private readonly IDocumentService _documentService;
         private readonly IUserService _userService;
+        private readonly IFolderService _folderService;
         private readonly ILogger<DocumentController> _logger;
 
 
-        public DocumentController(IDocumentService documentService, IUserService userService, ILogger<DocumentController> logger)
+        public DocumentController(
+            IDocumentService documentService,
+            IUserService userService,
+            ILogger<DocumentController> logger,
+            IFolderService folderService
+            )
         {
             _documentService = documentService;
             _userService = userService;
+            _folderService = folderService;
             _logger = logger;
         }
         
@@ -28,7 +35,9 @@ namespace CMS_Project.Controllers
         [HttpPost("create-document")]
         public async Task<IActionResult> CreateDocument([FromBody] DocumentCreateDto documentCreateDto)
         {
-            //ModelState check
+            _logger.LogInformation("Received documentCreateDto: {@documentCreateDto}", documentCreateDto);
+
+            // ModelState check
             if (!ModelState.IsValid)
             {
                 _logger.LogWarning("Attempted to create a document with invalid data.");
@@ -38,14 +47,30 @@ namespace CMS_Project.Controllers
             try
             {
                 var userId = await _userService.GetUserIdFromClaimsAsync(User);
+
+                // Check if FolderId is provided and if the folder exists
+                if (documentCreateDto.DocumentId.HasValue)
+                {
+                    var folder = await _folderService.GetFolderByIdAsync(documentCreateDto.DocumentId.Value, userId);
+                    if (folder == null)
+                    {
+                        return BadRequest(new { error = new { message = "Specified folder does not exist or does not belong to the user." } });
+                    }
+                }
+
                 var createdDocument = await _documentService.CreateDocumentAsync(documentCreateDto, userId);
-                
-                return CreatedAtAction(nameof(GetDocumentById), new { id = createdDocument.Document.DocumentId }, createdDocument);
+
+                return CreatedAtAction(nameof(GetDocumentById), new { id = createdDocument.Document }, createdDocument);
             }
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex.Message);
                 return BadRequest(new { message = ex.Message });
+            }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogError(ex, "Database update error occurred while creating the document.");
+                return StatusCode(500, "A database error occurred.");
             }
             catch (Exception ex)
             {
@@ -54,24 +79,79 @@ namespace CMS_Project.Controllers
             }
         }
 
+
+
+
         // GET: api/Document/all
         [HttpGet("all")]
-        public async Task<IActionResult> GetDocuments()
+        public async Task<IActionResult> GetAllDocuments()
         {
-            var userId = await _userService.GetUserIdFromClaimsAsync(User);
-            var documents = await _documentService.GetAllDocumentsAsync(userId);
-            return Ok(documents);
+            try
+            {
+                // Retrieve the authenticated user's ID from claims
+                var userId = await _userService.GetUserIdFromClaimsAsync(User);
+
+                // Retrieve user information as UserDto to exclude sensitive fields
+                var userDto = await _userService.GetUserDtoByIdAsync(userId);
+                
+                if (userDto == null)
+                {
+                    _logger.LogError("User with ID {UserId} not found.", userId);
+                    return StatusCode(500, "User not found.");
+                }
+
+                // Retrieve all documents associated with the user
+                var documents = await _documentService.GetAllDocumentsAsync(userId);
+
+                // Construct the response with specific user properties
+                var response = new
+                {
+                    user = new
+                    {
+                        userId = userDto.UserId,
+                        username = userDto.Username,
+                        email = userDto.Email,
+                        createdDate = userDto.CreatedDate
+                    },
+                    documents = documents.Select(d => new
+                    {
+                        documentId = d.DocumentId,
+                        title = d.Title,
+                        content = d.Content,
+                        contentType = d.ContentType,
+                        createdDate = d.CreatedDate
+                    }).ToList()
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while retrieving documents.");
+                return StatusCode(500, "An unexpected error occurred.");
+            }
         }
+
+
+
+        
+
 
         // GET: api/Documents/{id}
         [HttpGet("{id}")]
-        public async Task<ActionResult> GetDocumentById(int id)
+        public async Task<IActionResult> GetDocumentById(int id)
         {
             try
             {
                 var userId = await _userService.GetUserIdFromClaimsAsync(User);
-                var document = await _documentService.GetDocumentByIdAsync(id, userId);
-                return Ok(document);
+                var responseDto = await _documentService.GetDocumentByIdAsync(id, userId);
+        
+                if (responseDto == null)
+                {
+                    return NotFound(new { message = $"Document with ID {id} was not found or does not belong to the user." });
+                }
+
+                return Ok(responseDto);
             }
             catch (KeyNotFoundException ex)
             {
@@ -81,9 +161,11 @@ namespace CMS_Project.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"An error occurred while retrieving document with ID {id}.");
-                return StatusCode(500, "An unexpected error occurred.");
+                return StatusCode(500, $"An unexpected error occurred: {ex.Message}");
             }
         }
+
+
 
         // PUT: api/Documents/{id}
         [HttpPut("{id}")]
